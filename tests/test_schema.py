@@ -19,11 +19,6 @@ class Character(R.ObjectType):
     friends = R.Character.List
 
 
-class Human(R.ObjectTypeWithInterfaces(Character)):
-    home_planet = R.String.NonNull
-    born_on = R.DateTime
-
-
 def test_schema_creation_using_r_attr():
     schema = R.schema(R.Dog)
     result = graphql(schema, '{ name }')
