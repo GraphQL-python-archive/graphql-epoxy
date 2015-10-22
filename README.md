@@ -1,12 +1,14 @@
-# Epoxy
+# Epoxy [![Build Status](https://travis-ci.org/jhgg/epoxy.svg?branch=master)](https://travis-ci.org/jhgg/epoxy)
 
-Epoxy is a magical Python library for rapid development of GraphQL types, schemas, resolvers, mutations using 
-maximum amounts of wizardy and sugar.
+Epoxy is a magical tool for rapid development of GraphQL types, schemas, resolvers, mutations quickly & pragmatically.
 
 * **Minimal Boilerplate**: You can create a GraphQL schema and execute it in less than 5 lines of code.
 * **Definition Ordering**: It doesn't matter. Define your objects in any order you want. Epoxy will take care of the rest.
 * **Quick**: Once you create your schema, epoxy doesn't get in the way. Your resolvers will be called directly by 
 `graphql-core` with no additional indirection.
+
+This codebase is currently a **WORK IN PROGRESS** and does not currently work. If you're looking for a pythonic 
+`graphql-core` wrapper, check out [`graphene`](https://github.com/graphql-python/graphene).
 
 ## Installation
 
@@ -43,6 +45,31 @@ class Query(R.ObjectType):
 
 
 schema = R.schema(R.Query)
+
+```
+
+You can even have `epoxy` learn about your already defined Python enums. 
+
+```python
+class MoodStatus(enums.Enum):
+    HAPPY = 1
+    SAD = 2
+    MELANCHOLY = 3
+
+
+R(MoodStatus)
+
+```
+
+And then use it in an ObjectType:
+
+```python
+class Foo(R.ObjectType):
+    mood = R.MoodStatus
+
+
+    def resolve_mood(self, *args):
+        return MoodStatus.HAPPY.value
 
 ```
 
