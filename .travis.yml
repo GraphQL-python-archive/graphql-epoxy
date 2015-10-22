@@ -5,7 +5,7 @@ python:
 cache:
   directories:
     - $HOME/.cache/pip
-    - $HOME/.tox
+    - $TRAVIS_BUILD_DIR/.tox
 
 install:
 - pip install tox
