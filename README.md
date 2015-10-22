@@ -27,24 +27,23 @@ Defining a GraphQL Schema using Epoxy is as simple as creating a `TypeRegistry` 
 from epoxy import TypeRegistry
 R = TypeRegistry()
 
-class Character(R.ObjectType):
+class Character(R.Interface):
     id = R.ID
     name = R.String
     friends = R.Character.List
     
 
-class Human(R.ObjectTypeWithInterfaces(Character)):
+class Human(R.Implements.Character):
     home_planet = R.String.NonNull
     
     
 class Query(R.ObjectType):
     human = R.Human
+    foo = R.Foo  # This is defined below! Ordering doesn't matter! 
     
     def resolve_human(self, obj, args, info):
+        """This will be used as the description of the field Query.human."""
         return Human(5, 'Bob', [Human(6, 'Bill')]
-
-
-schema = R.schema(R.Query)
 
 ```
 
@@ -66,7 +65,8 @@ And then use it in an ObjectType:
 ```python
 class Foo(R.ObjectType):
     mood = R.MoodStatus
-
+    # or 
+    mood = R.Field(R.MoodStatus, description="Describing the mood of Foo, is sometimes pretty hard.")
 
     def resolve_mood(self, *args):
         return MoodStatus.HAPPY.value
@@ -76,6 +76,8 @@ class Foo(R.ObjectType):
 Schema is a `GraphQLSchema` object. You can now use it with graphql:
 
 ```python
+schema = R.schema(R.Query)
+
 result = graphql(schema, '''
 {
     human {
@@ -93,7 +95,73 @@ result = graphql(schema, '''
 
 ```
 
+The schema is now defined as: 
+
+```graphql
+
+enum MoodStatus {
+    HAPPY
+    SAD
+    MELANCHOLY
+}
+
+interface Character {
+    id: ID
+    name: String
+    friends: [Character]
+}
+
+type Human implements Character {
+    id: ID
+    name: String
+    friends: [Character]
+    homePlanet: String!
+}
+
+type Foo {
+    mood: MoodStatus
+}
+
+type Query {
+    human: Human
+    foo: Foo
+}
+```
+
 Notice that `epoxy` converted snake_cased fields to camel_case in the GraphQL Schema.
+
+## ObjectTypes become containers (Coming Soon)
+
+You can bring your own objects, (like a Django or SQLAlchemy model), or you can use the class you just created:
+
+```python
+
+me = Human(id=2, name='Jake', home_planet='Earth', friends=[Human(id=3, name='Syrus', home_planet='Earth')])
+
+print(me) # <Human id=2, name='Jake', home_planet='Earth', friends=[<Human id=3, name='Syrus', home_planet='Earth', friends=[]>]]>
+print(me.name) # Jake
+```
+
+Epoxy will automatically resolve the runtime types of your objects if class that you created from `R.ObjectType`, but 
+if you want to bring your own `Human` (i.e. a model.Model from Django), just tell Epoxy about it! And if you don't want
+to, you can just override the `is_type_of` function inside `Human` to something more to your liking.
+
+### `my_app/models.py`
+```python
+from django.db import models
+from my_app.graphql import R
+
+@R.Human.CanBe
+class RealHumanBean(models.Model):
+    """
+    And a real hero.
+    """
+    name = models.CharField(name=Name)
+
+
+# Or if you don't want to use the decorator:
+R.Human.CanBe(Human)
+```
 
 ## Mutations (Coming Soon)
 
