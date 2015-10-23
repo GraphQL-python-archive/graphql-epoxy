@@ -1,4 +1,4 @@
-# Epoxy [![Build Status](https://travis-ci.org/jhgg/epoxy.svg?branch=master)](https://travis-ci.org/jhgg/epoxy) [![PyPI version](https://badge.fury.io/py/graphql-epoxy.svg)](https://badge.fury.io/py/graphql-epoxy) 
+# Epoxy [![Build Status](https://travis-ci.org/jhgg/graphql-epoxy.svg?branch=master)](https://travis-ci.org/jhgg/epoxy) [![Coverage Status](https://coveralls.io/repos/jhgg/graphql-epoxy/badge.svg?branch=master&service=github)](https://coveralls.io/github/jhgg/graphql-epoxy?branch=master) [![PyPI version](https://badge.fury.io/py/graphql-epoxy.svg)](https://badge.fury.io/py/graphql-epoxy) 
 
 Epoxy is a magical tool for rapid development of GraphQL types, schemas, resolvers, mutations quickly & pragmatically.
 
