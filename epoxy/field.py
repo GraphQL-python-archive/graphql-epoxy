@@ -1,17 +1,17 @@
 from graphql.core.type import GraphQLField
+from .utils.gen_id import gen_id
 
 
 class Field(object):
-    _creation_counter = 0
-
-    def __init__(self, type, description=None, args=None, name=None, resolver=None):
+    def __init__(self, type, description=None, args=None, name=None, resolver=None, _counter=None,
+                 _interface_resolver=None):
         self.name = name
         self.type = type
         self.description = description
         self.args = args
         self.resolver = resolver
-        self._counter = Field._creation_counter
-        Field._creation_counter += 1
+        self._interface_resolver = _interface_resolver
+        self._counter = _counter or gen_id()
 
     def to_field(self, resolver):
         return GraphQLField(self.type, self.args, resolver)
