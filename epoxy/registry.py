@@ -1,4 +1,3 @@
-from collections import defaultdict
 from enum import Enum
 
 from graphql.core.type import (
@@ -43,8 +42,7 @@ class TypeRegistry(object):
     def __init__(self):
         self._registered_types = {}
         self._added_impl_types = set()
-        self._interface_field_attrs = {}
-        self._interface_resolvers = defaultdict(dict)
+        self._interface_declared_fields = {}
         self.ObjectType = self._create_object_type_class()
         self.Implements = self._create_implement_type_class()
         self.Interface = self._create_interface_type_class()
@@ -141,9 +139,9 @@ class TypeRegistry(object):
 
         class RegistryInterfaceMeta(InterfaceMeta):
             @staticmethod
-            def _register(interface, attrs):
+            def _register(interface, declared_fields):
                 registry.register(interface)
-                registry._add_interface_attrs(interface, attrs)
+                registry._add_interface_declared_fields(interface, declared_fields)
 
             @staticmethod
             def _get_registry():
@@ -154,17 +152,11 @@ class TypeRegistry(object):
 
         return Interface
 
-    def _add_interface_attrs(self, interface, attrs):
-        self._interface_field_attrs[interface] = attrs
+    def _add_interface_declared_fields(self, interface, attrs):
+        self._interface_declared_fields[interface] = attrs
 
-    def _get_interface_attrs(self, interface):
-        return self._interface_field_attrs.get(interface, {})
-
-    def _add_known_interface_resolver(self, interface, field_name, resolver):
-        self._interface_resolvers[interface][field_name] = resolver
-
-    def _get_interface_resolvers(self, interface):
-        return self._interface_resolvers[interface]
+    def _get_interface_declared_fields(self, interface):
+        return self._interface_declared_fields.get(interface, {})
 
     def _add_impl_to_interfaces(self, *types):
         type_map = {}

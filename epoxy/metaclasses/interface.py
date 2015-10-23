@@ -10,22 +10,22 @@ class InterfaceMeta(type):
         if attrs.get('abstract'):
             return super(InterfaceMeta, mcs).__new__(mcs, name, bases, attrs)
 
-        potential_fields = yank_potential_fields(attrs)
+        declared_fields = get_declared_fields(name, yank_potential_fields(attrs))
         interface = GraphQLInterfaceType(
             name,
-            fields=lambda: mcs._build_field_map(attrs, potential_fields),
+            fields=lambda: mcs._build_field_map(attrs, declared_fields),
             description=attrs.get('__doc__'),
             resolve_type=lambda: None
         )
-        mcs._register(interface, potential_fields)
-        attrs['_registry'] = mcs._get_registry()
+        mcs._register(interface, declared_fields)
         attrs['T'] = interface
+        attrs['_registry'] = mcs._get_registry()
         cls = super(InterfaceMeta, mcs).__new__(mcs, name, bases, attrs)
         attrs['_cls'] = cls
         return cls
 
     @staticmethod
-    def _register(object_type, attrs):
+    def _register(object_type, declared_fields):
         raise NotImplementedError('_register must be implemented in the sub-metaclass')
 
     @staticmethod
@@ -33,11 +33,10 @@ class InterfaceMeta(type):
         raise NotImplementedError('_get_registry must be implemented in the sub-metaclass')
 
     @staticmethod
-    def _build_field_map(attrs, potential_fields):
+    def _build_field_map(attrs, fields):
         instance = attrs['_cls']()
         registry = attrs['_registry']
 
-        fields = get_declared_fields(potential_fields)
         field_map = OrderedDict()
 
         for field_attr_name, field in fields:
@@ -47,10 +46,10 @@ class InterfaceMeta(type):
             )
 
             if interface_resolve_fn:
-                registry._add_known_interface_resolver(attrs['T'], field_attr_name, interface_resolve_fn)
+                field._interface_resolver = interface_resolve_fn
 
             resolve_fn = interface_resolve_fn or make_default_resolver(field_attr_name)
 
-            field_map[field.name] = field.to_field(resolve_fn)
+            field_map[field.name] = field.to_field(registry, resolve_fn)
 
         return field_map

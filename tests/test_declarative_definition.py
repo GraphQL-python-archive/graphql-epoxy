@@ -1,14 +1,10 @@
 from graphql.core.type.definition import GraphQLObjectType, GraphQLNonNull, GraphQLList
 from graphql.core.type.scalars import GraphQLString
 from epoxy.registry import TypeRegistry
+from pytest import raises
 
 
-def test_register_single_type():
-    R = TypeRegistry()
-
-    class Dog(R.ObjectType):
-        name = R.Field(R.String)
-
+def check_dog(R, Dog):
     assert isinstance(Dog.T, GraphQLObjectType)
     assert R.type('Dog') is Dog.T
 
@@ -18,17 +14,31 @@ def test_register_single_type():
     assert fields['name'].name == 'name'
 
 
+def test_register_single_type():
+    R = TypeRegistry()
+
+    class Dog(R.ObjectType):
+        name = R.Field(R.String)
+
+    check_dog(R, Dog)
+
+
+def test_register_single_type_using_string():
+    R = TypeRegistry()
+
+    class Dog(R.ObjectType):
+        name = R.Field('String')
+
+    check_dog(R, Dog)
+
+
 def test_register_type_can_declare_builtin_scalar_types_directly():
     R = TypeRegistry()
 
     class Dog(R.ObjectType):
         name = R.String
 
-
-    fields = Dog.T.get_fields()
-    assert list(fields.keys()) == ['name']
-    assert fields['name'].type == GraphQLString
-    assert fields['name'].name == 'name'
+    check_dog(R, Dog)
 
 
 def test_register_type_can_declare_builtin_scalar_type_as_non_null():
@@ -120,3 +130,25 @@ def test_register_type_can_declare_other_registered_types_directly_as_non_null_l
     type = type.of_type
     assert isinstance(type, GraphQLNonNull)
     assert type.of_type == Dog.T
+
+
+def test_rejects_object_type_definition_with_duplicated_field_names():
+    R = TypeRegistry()
+
+    with raises(AssertionError) as excinfo:
+        class Dog(R.ObjectType):
+            friend = R.Dog.NonNull
+            friendAliased = R.Field(R.Dog, name='friend')
+
+    assert str(excinfo.value) == 'Duplicate field definition for "friend" in type "Dog".'
+
+
+def test_rejects_interface_type_definition_with_duplicated_field_names():
+    R = TypeRegistry()
+
+    with raises(AssertionError) as excinfo:
+        class Dog(R.Interface):
+            friend = R.Dog.NonNull
+            friendAliased = R.Field(R.Dog, name='friend')
+
+    assert str(excinfo.value) == 'Duplicate field definition for "friend" in type "Dog".'
