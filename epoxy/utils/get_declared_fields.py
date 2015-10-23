@@ -26,12 +26,13 @@ def get_declared_fields(type_name, attrs):
             field = Field(obj, name=to_camel_case(field_attr_name), _counter=counter)
             fields.append((field_attr_name, field))
 
+    fields.sort(key=lambda f: f[1]._counter)
+
     seen_field_names = set()
-    for _, field in fields:
-        assert field.name not in seen_field_names, 'Duplicate field definition for "{}" in type "{}".'.format(
-            field.name, type_name
+    for field_attr_name, field in fields:
+        assert field.name not in seen_field_names, 'Duplicate field definition for name "{}" in type "{}.{}".'.format(
+            field.name, type_name, field_attr_name
         )
         seen_field_names.add(field.name)
 
-    fields.sort(key=lambda f: f[1]._counter)
     return fields

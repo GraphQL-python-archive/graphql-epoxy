@@ -41,6 +41,15 @@ def test_register_type_can_declare_builtin_scalar_types_directly():
     check_dog(R, Dog)
 
 
+def test_register_type_can_use_builtin_graphql_types_in_field():
+    R = TypeRegistry()
+
+    class Dog(R.ObjectType):
+        name = R.Field(GraphQLString)
+
+    check_dog(R, Dog)
+
+
 def test_register_type_can_declare_builtin_scalar_type_as_non_null():
     R = TypeRegistry()
 
@@ -138,9 +147,9 @@ def test_rejects_object_type_definition_with_duplicated_field_names():
     with raises(AssertionError) as excinfo:
         class Dog(R.ObjectType):
             friend = R.Dog.NonNull
-            friendAliased = R.Field(R.Dog, name='friend')
+            friend_aliased = R.Field(R.Dog, name='friend')
 
-    assert str(excinfo.value) == 'Duplicate field definition for "friend" in type "Dog".'
+    assert str(excinfo.value) == 'Duplicate field definition for name "friend" in type "Dog.friend_aliased".'
 
 
 def test_rejects_interface_type_definition_with_duplicated_field_names():
@@ -149,6 +158,6 @@ def test_rejects_interface_type_definition_with_duplicated_field_names():
     with raises(AssertionError) as excinfo:
         class Dog(R.Interface):
             friend = R.Dog.NonNull
-            friendAliased = R.Field(R.Dog, name='friend')
+            friend_aliased = R.Field(R.Dog, name='friend')
 
-    assert str(excinfo.value) == 'Duplicate field definition for "friend" in type "Dog".'
+    assert str(excinfo.value) == 'Duplicate field definition for name "friend" in type "Dog.friend_aliased".'
