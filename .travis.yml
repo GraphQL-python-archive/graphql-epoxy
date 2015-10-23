@@ -1,5 +1,16 @@
 language: python
 sudo: false
+matrix:
+  include:
+    - python: "2.7"
+      env: TOX_ENV=py27
+    - python: "3.3"
+      env: TOX_ENV=py33
+    - python: "3.4"
+      env: TOX_ENV=py34
+    - python: "3.5"
+      env: TOX_ENV=py35,import-order,flake8
+
 cache:
   directories:
     - $HOME/.cache/pip
@@ -9,4 +20,4 @@ install:
 - pip install tox
 
 script:
-- tox
+- tox -e $TOX_ENV
