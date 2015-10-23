@@ -14,7 +14,7 @@ from graphql.core.type import (
     GraphQLString,
     GraphQLUnionType
 )
-from graphql.core.type.definition import get_named_type
+from graphql.core.type.definition import GraphQLType, get_named_type
 from graphql.core.type.schema import type_map_reducer
 
 import six
@@ -70,23 +70,29 @@ class TypeRegistry(object):
         self._registered_types[t.name] = t
         return t
 
-    def _attr(self, item):
+    def _resolve_type(self, item):
+        if item is None:
+            return None
+
         if not isinstance(item, str):
-            return maybe_t(item)
+            item = maybe_t(item)
+            assert isinstance(item, GraphQLType), \
+                'Attempted to resolve an item {} that is not a GraphQLType'.format(item)
+
+            return item
 
         value = self._registered_types.get(item)
-
-        assert value, "Item {} does not exist".format(item)
+        assert value, "Type {} was requested, but was not registered.".format(item)
         return value
 
     def __getattr__(self, item):
-        return RootTypeThunk(self, self._attr, item)
+        return RootTypeThunk(self, self._resolve_type, item)
 
     def __getitem__(self, item):
         if isinstance(item, tuple):
-            return ThunkList([AttributeTypeThunk(self._attr, i) for i in item])
+            return ThunkList([AttributeTypeThunk(self._resolve_type, i) for i in item])
 
-        return RootTypeThunk(self, self._attr, item)
+        return RootTypeThunk(self, self._resolve_type, item)
 
     def __call__(self, t):
         return self.register(t)
@@ -124,10 +130,10 @@ class TypeRegistry(object):
 
             def __getitem__(self, item):
                 if isinstance(item, tuple):
-                    type_thunk = ThunkList([ResolveThunk(registry._attr, i) for i in item])
+                    type_thunk = ThunkList([ResolveThunk(registry._resolve_type, i) for i in item])
 
                 else:
-                    type_thunk = ThunkList([ResolveThunk(registry._attr, item)])
+                    type_thunk = ThunkList([ResolveThunk(registry._resolve_type, item)])
 
                 return registry._create_object_type_class(type_thunk)
 
