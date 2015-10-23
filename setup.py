@@ -1,4 +1,13 @@
 from setuptools import setup, find_packages
+import sys
+
+required_packages = ['graphql-core>=0.4.7b0']
+
+if sys.version_info <= (2, 7, 0):
+    required_packages.append('enum34>=1.0.4')
+
+if sys.version_info <= (3, 4, 0):
+    required_packages.append('singledispatch>=3.4.0')
 
 setup(
     name='graphql-epoxy',
@@ -19,6 +28,6 @@ setup(
 
     keywords='api graphql protocol rest',
     packages=find_packages(exclude=['tests']),
-    install_requires=['graphql-core>=0.4.7b0'],
+    install_requires=required_packages,
     tests_require=['pytest>=2.7.3'],
 )

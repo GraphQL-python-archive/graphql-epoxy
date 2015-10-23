@@ -1,5 +1,6 @@
 from collections import defaultdict
 from enum import Enum
+
 from graphql.core.type import (
     GraphQLBoolean,
     GraphQLEnumType,
@@ -18,11 +19,10 @@ from graphql.core.type.definition import get_named_type
 from graphql.core.type.schema import type_map_reducer
 
 import six
-from epoxy.metaclasses.interface import InterfaceMeta
-from epoxy.thunk import RootTypeThunk, ResolveThunk
 from .field import Field
+from .metaclasses.interface import InterfaceMeta
 from .metaclasses.object_type import ObjectTypeMeta
-from .thunk import AttributeTypeThunk, IdentityTypeThunk, ThunkList, TransformThunkList
+from .thunk import AttributeTypeThunk, ResolveThunk, RootTypeThunk, ThunkList, TransformThunkList
 from .utils.enum_to_graphql_enum import enum_to_graphql_enum
 from .utils.maybe_t import maybe_t
 from .utils.method_dispatch import method_dispatch

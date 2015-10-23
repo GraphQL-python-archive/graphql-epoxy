@@ -1,4 +1,9 @@
-from functools import singledispatch, update_wrapper
+try:
+    from functools import singledispatch
+except ImportError:
+    from singledispatch import singledispatch
+
+from functools import update_wrapper
 
 
 def method_dispatch(func):

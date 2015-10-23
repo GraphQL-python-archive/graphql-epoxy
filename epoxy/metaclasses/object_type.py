@@ -43,19 +43,11 @@ class ObjectTypeMeta(type):
         interfaces = type.get_interfaces()
         fields = []
 
-        counter = 0
-
         for interface in interfaces:
             resolve_fn_getter = registry._get_interface_resolvers(interface).get
             fields += get_declared_fields(registry._get_interface_attrs(interface), resolve_fn_getter)
 
         fields += get_declared_fields(potential_fields)
-
-        for field_attr_name, field in fields:
-            counter += 1
-            field._counter = counter
-
-        fields.sort(key=lambda f: f[1]._counter)
         field_map = OrderedDict()
 
         for field_attr_name, field in fields:
@@ -72,4 +64,4 @@ class ObjectTypeMeta(type):
 
     @staticmethod
     def _get_interfaces():
-        return []
+        return None

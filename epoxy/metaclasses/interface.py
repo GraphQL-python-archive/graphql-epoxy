@@ -2,7 +2,6 @@ from collections import OrderedDict
 from graphql.core.type.definition import GraphQLInterfaceType
 from ..utils.get_declared_fields import get_declared_fields
 from ..utils.make_default_resolver import make_default_resolver
-from ..utils.no_implementation_registration import no_implementation_registration
 from ..utils.yank_potential_fields import yank_potential_fields
 
 
@@ -12,15 +11,12 @@ class InterfaceMeta(type):
             return super(InterfaceMeta, mcs).__new__(mcs, name, bases, attrs)
 
         potential_fields = yank_potential_fields(attrs)
-
-        with no_implementation_registration():
-            interface = GraphQLInterfaceType(
-                name,
-                fields=lambda: mcs._build_field_map(attrs, potential_fields),
-                description=attrs.get('__doc__'),
-                resolve_type=lambda: None
-            )
-
+        interface = GraphQLInterfaceType(
+            name,
+            fields=lambda: mcs._build_field_map(attrs, potential_fields),
+            description=attrs.get('__doc__'),
+            resolve_type=lambda: None
+        )
         mcs._register(interface, potential_fields)
         attrs['_registry'] = mcs._get_registry()
         attrs['T'] = interface
