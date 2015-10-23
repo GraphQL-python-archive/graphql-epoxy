@@ -1,7 +1,9 @@
 from collections import OrderedDict
+from functools import partial
 from graphql.core.type.definition import GraphQLInterfaceType
 from ..utils.get_declared_fields import get_declared_fields
 from ..utils.make_default_resolver import make_default_resolver
+from ..utils.ref_holder import RefHolder
 from ..utils.yank_potential_fields import yank_potential_fields
 
 
@@ -10,18 +12,21 @@ class InterfaceMeta(type):
         if attrs.get('abstract'):
             return super(InterfaceMeta, mcs).__new__(mcs, name, bases, attrs)
 
+        class_ref = RefHolder()
         declared_fields = get_declared_fields(name, yank_potential_fields(attrs))
         interface = GraphQLInterfaceType(
             name,
-            fields=lambda: mcs._build_field_map(attrs, declared_fields),
+            fields=partial(mcs._build_field_map, class_ref, declared_fields),
             description=attrs.get('__doc__'),
             resolve_type=lambda: None
         )
+
         mcs._register(interface, declared_fields)
-        attrs['T'] = interface
-        attrs['_registry'] = mcs._get_registry()
         cls = super(InterfaceMeta, mcs).__new__(mcs, name, bases, attrs)
-        attrs['_cls'] = cls
+        cls.T = interface
+        cls._registry = mcs._get_registry()
+        class_ref.set(cls)
+
         return cls
 
     @staticmethod
@@ -33,9 +38,13 @@ class InterfaceMeta(type):
         raise NotImplementedError('_get_registry must be implemented in the sub-metaclass')
 
     @staticmethod
-    def _build_field_map(attrs, fields):
-        instance = attrs['_cls']()
-        registry = attrs['_registry']
+    def _build_field_map(class_ref, fields):
+        cls = class_ref.get()
+        if not cls:
+            return
+
+        instance = cls()
+        registry = cls._registry
 
         field_map = OrderedDict()
 

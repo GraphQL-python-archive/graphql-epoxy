@@ -18,6 +18,7 @@ from graphql.core.type.definition import GraphQLType, get_named_type
 from graphql.core.type.schema import type_map_reducer
 
 import six
+from .bases.object_type import ObjectTypeBase
 from .field import Field
 from .metaclasses.interface import InterfaceMeta
 from .metaclasses.object_type import ObjectTypeMeta
@@ -116,7 +117,8 @@ class TypeRegistry(object):
 
                 return None
 
-        class ObjectType(six.with_metaclass(RegistryObjectTypeMeta)):
+        @six.add_metaclass(RegistryObjectTypeMeta)
+        class ObjectType(ObjectTypeBase):
             abstract = True
 
         return ObjectType

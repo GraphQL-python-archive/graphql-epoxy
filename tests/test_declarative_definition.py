@@ -161,3 +161,20 @@ def test_rejects_interface_type_definition_with_duplicated_field_names():
             friend_aliased = R.Field(R.Dog, name='friend')
 
     assert str(excinfo.value) == 'Duplicate field definition for name "friend" in type "Dog.friend_aliased".'
+
+
+def test_orders_fields_in_order_declared():
+    R = TypeRegistry()
+
+    class Dog(R.ObjectType):
+        id = R.ID
+        name = R.Field('String')
+        dog = R.Dog
+        some_other_field = R.Field(R.Int)
+        some_other_dog = R.Field('Dog')
+        foo = R.String
+        bar = R.String
+        aaa = R.String
+
+    field_order = list(Dog.T.get_fields().keys())
+    assert field_order == ['id', 'name', 'dog', 'someOtherField', 'someOtherDog', 'foo', 'bar', 'aaa']

@@ -1,30 +1,34 @@
 from collections import OrderedDict
+from functools import partial
 from graphql.core.type import GraphQLObjectType
 from ..utils.get_declared_fields import get_declared_fields
 from ..utils.make_default_resolver import make_default_resolver
 from ..utils.no_implementation_registration import no_implementation_registration
+from ..utils.ref_holder import RefHolder
 from ..utils.yank_potential_fields import yank_potential_fields
 
 
 class ObjectTypeMeta(type):
     def __new__(mcs, name, bases, attrs):
-        if attrs.get('abstract'):
+        if attrs.pop('abstract', False):
             return super(ObjectTypeMeta, mcs).__new__(mcs, name, bases, attrs)
 
+        class_ref = RefHolder()
         declared_fields = get_declared_fields(name, yank_potential_fields(attrs))
         with no_implementation_registration():
             object_type = GraphQLObjectType(
                 name,
-                fields=lambda: mcs._build_field_map(attrs, declared_fields),
+                fields=partial(mcs._build_field_map, class_ref, declared_fields),
                 description=attrs.get('__doc__'),
                 interfaces=mcs._get_interfaces()
             )
 
         mcs._register(object_type)
-        attrs['_registry'] = mcs._get_registry()
-        attrs['T'] = object_type
         cls = super(ObjectTypeMeta, mcs).__new__(mcs, name, bases, attrs)
-        attrs['_cls'] = cls
+        cls.T = object_type
+        cls._registry = mcs._get_registry()
+        class_ref.set(cls)
+
         return cls
 
     @staticmethod
@@ -36,10 +40,14 @@ class ObjectTypeMeta(type):
         raise NotImplementedError('_get_registry must be implemented in the sub-metaclass')
 
     @staticmethod
-    def _build_field_map(attrs, declared_fields):
-        instance = attrs['_cls']()
-        type = attrs['T']
-        registry = attrs['_registry']
+    def _build_field_map(class_ref, declared_fields):
+        cls = class_ref.get()
+        if not cls:
+            return
+
+        instance = cls(__field_map_init=True)
+        type = cls.T
+        registry = cls._registry
         interfaces = type.get_interfaces()
         fields = []
 
@@ -54,6 +62,7 @@ class ObjectTypeMeta(type):
 
         fields += declared_fields
         field_map = OrderedDict()
+        field_attr_map = OrderedDict()
 
         for field_attr_name, field in fields:
             resolve_fn = (
@@ -70,8 +79,15 @@ class ObjectTypeMeta(type):
             if field.name in field_map:
                 del field_map[field.name]
 
-            field_map[field.name] = field.to_field(registry, resolve_fn)
+            graphql_field = field.to_field(registry, resolve_fn)
+            field_map[field.name] = graphql_field
 
+            if field_attr_name in field_attr_map:
+                del field_attr_map[field_attr_name]
+
+            field_attr_map[field_attr_name] = graphql_field
+
+        cls._field_attr_map = field_attr_map
         return field_map
 
     @staticmethod
