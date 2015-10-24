@@ -10,7 +10,7 @@ class Human(R.ObjectType):
     favorite_color = R.String
 
 
-Schema = R.schema(R.Human)
+Schema = R.Schema(R.Human)
 
 
 def test_object_type_as_data():

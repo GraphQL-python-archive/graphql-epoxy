@@ -21,7 +21,7 @@ def test_resolves_from_interface():
         def resolve_dog(self, *args):
             return Dog()
 
-    schema = R.schema(R.Query)
+    schema = R.Schema(R.Query)
     result = graphql(schema, '{ dog { makeNoise } }')
     assert not result.errors
     assert result.data == {'dog': {'makeNoise': 'I am a pet, hear me roar!'}}
@@ -45,7 +45,7 @@ def test_field_re_definition_wont_override():
         def resolve_dog(self, *args):
             return Dog()
 
-    schema = R.schema(R.Query)
+    schema = R.Schema(R.Query)
     result = graphql(schema, '{ dog { makeNoise } }')
     assert not result.errors
     assert result.data == {'dog': {'makeNoise': 'I am a pet, hear me roar!'}}
@@ -75,7 +75,7 @@ def test_will_choose_first_resolver_of_first_defined_interface():
         def resolve_dog(self, *args):
             return Dog()
 
-    schema = R.schema(R.Query)
+    schema = R.Schema(R.Query)
     result = graphql(schema, '{ dog { makeNoise } }')
     assert not result.errors
     assert result.data == {'dog': {'makeNoise': 'Woof, woof!!'}}
@@ -102,7 +102,7 @@ def test_object_type_can_override_interface_resolver():
         def resolve_dog(self, *args):
             return Dog()
 
-    schema = R.schema(R.Query)
+    schema = R.Schema(R.Query)
 
     result = graphql(schema, '{ dog { makeNoise } }')
     assert not result.errors

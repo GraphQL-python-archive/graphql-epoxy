@@ -4,7 +4,7 @@ from graphql.core.type import GraphQLObjectType
 from ..utils.get_declared_fields import get_declared_fields
 from ..utils.make_default_resolver import make_default_resolver
 from ..utils.no_implementation_registration import no_implementation_registration
-from ..utils.ref_holder import RefHolder
+from ..utils.weak_ref_holder import WeakRefHolder
 from ..utils.yank_potential_fields import yank_potential_fields
 
 
@@ -13,8 +13,10 @@ class ObjectTypeMeta(type):
         if attrs.pop('abstract', False):
             return super(ObjectTypeMeta, mcs).__new__(mcs, name, bases, attrs)
 
-        class_ref = RefHolder()
+        class_ref = WeakRefHolder()
+        registry = mcs._get_registry()
         declared_fields = get_declared_fields(name, yank_potential_fields(attrs))
+
         with no_implementation_registration():
             object_type = GraphQLObjectType(
                 name,
@@ -23,10 +25,12 @@ class ObjectTypeMeta(type):
                 interfaces=mcs._get_interfaces()
             )
 
-        mcs._register(object_type)
+            object_type.is_type_of = registry._create_is_type_of(object_type)
+
         cls = super(ObjectTypeMeta, mcs).__new__(mcs, name, bases, attrs)
+        mcs._register(object_type, cls)
+        cls._registry = registry
         cls.T = object_type
-        cls._registry = mcs._get_registry()
         class_ref.set(cls)
 
         return cls

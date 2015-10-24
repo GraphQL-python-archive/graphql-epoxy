@@ -36,7 +36,7 @@ class ResolveThunkMixin(object):
         self.item = item
 
     def _resolve(self, item):
-        if callable(item):
+        if callable(item) and not hasattr(item, 'T'):
             return self._resolve(item())
 
         return maybe_callable(self.getter(item))

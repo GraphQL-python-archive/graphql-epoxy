@@ -1,5 +1,6 @@
+from collections import defaultdict
 from enum import Enum
-
+from functools import partial
 from graphql.core.type import (
     GraphQLBoolean,
     GraphQLEnumType,
@@ -19,6 +20,7 @@ from graphql.core.type.schema import type_map_reducer
 
 import six
 from .bases.object_type import ObjectTypeBase
+from .bases.class_type_creator import ClassTypeCreator
 from .field import Field
 from .metaclasses.interface import InterfaceMeta
 from .metaclasses.object_type import ObjectTypeMeta
@@ -44,8 +46,10 @@ class TypeRegistry(object):
         self._registered_types = {}
         self._added_impl_types = set()
         self._interface_declared_fields = {}
+        self._registered_types_can_be = defaultdict(set)
         self.ObjectType = self._create_object_type_class()
-        self.Implements = self._create_implement_type_class()
+        self.Implements = ClassTypeCreator(self, self._create_object_type_class)
+        self.Union = ClassTypeCreator(self, self._create_union_type_class)
         self.Interface = self._create_interface_type_class()
 
         for type in builtin_scalars:
@@ -66,8 +70,13 @@ class TypeRegistry(object):
     @register.register(GraphQLInputObjectType)
     @register.register(GraphQLScalarType)
     def register_(self, t):
-        assert t.name not in ('ObjectType', 'Implements', 'Interface')
-        assert t.name not in self._registered_types
+        assert not t.name.startswith('_'), \
+            'Registered type name cannot start with an "_".'
+        assert t.name not in ('ObjectType', 'Implements', 'Interface', 'Schema'), \
+            'You cannot register a type named "{}".'.format(type.name)
+        assert t.name not in self._registered_types, \
+            'There is already a registered type named "{}".'.format(type.name)
+
         self._registered_types[t.name] = t
         return t
 
@@ -103,8 +112,9 @@ class TypeRegistry(object):
 
         class RegistryObjectTypeMeta(ObjectTypeMeta):
             @staticmethod
-            def _register(object_type):
+            def _register(object_type, type_class):
                 registry.register(object_type)
+                registry._registered_types_can_be[object_type].add(type_class)
 
             @staticmethod
             def _get_registry():
@@ -122,25 +132,6 @@ class TypeRegistry(object):
             abstract = True
 
         return ObjectType
-
-    def _create_implement_type_class(self):
-        registry = self
-
-        class Implements(object):
-            def __getattr__(self, item):
-                return self[item]
-
-            def __getitem__(self, item):
-                if isinstance(item, tuple):
-                    type_thunk = ThunkList([ResolveThunk(registry._resolve_type, i) for i in item])
-
-                else:
-                    type_thunk = ThunkList([ResolveThunk(registry._resolve_type, item)])
-
-                return registry._create_object_type_class(type_thunk)
-
-        implements = Implements()
-        return implements
 
     def _create_interface_type_class(self):
         registry = self
@@ -160,18 +151,41 @@ class TypeRegistry(object):
 
         return Interface
 
+    def _create_union_type_class(self, types_thunk):
+        registry = self
+
+        class RegistryUnionMeta(UnionMeta):
+            @staticmethod
+            def _register(union):
+                registry.register(union)
+
+            @staticmethod
+            def _get_registry():
+                return registry
+
+        class Union(six.with_metaclass(RegistryUnionMeta)):
+            abstract = True
+
+            @staticmethod
+            def _get_types():
+                return TransformThunkList(types_thunk, get_named_type)
+
+        return Union
+
+    def _create_is_type_of(self, type):
+        return partial(self._is_type_of, type)
+
+    def _is_type_of(self, type, obj, info):
+        return obj.__class__ in self._registered_types_can_be[type]
+
     def _add_interface_declared_fields(self, interface, attrs):
         self._interface_declared_fields[interface] = attrs
 
     def _get_interface_declared_fields(self, interface):
         return self._interface_declared_fields.get(interface, {})
 
-    def _add_impl_to_interfaces(self, *types):
-        type_map = {}
-        for type in types:
-            type_map = type_map_reducer(type_map, type)
-
-        for type in type_map:
+    def _add_impl_to_interfaces(self):
+        for type in self._registered_types.values():
             if not isinstance(type, GraphQLObjectType):
                 continue
 
@@ -185,10 +199,10 @@ class TypeRegistry(object):
 
                 interface._impls.append(type)
 
-    def schema(self, query, mutation=None):
+    def Schema(self, query, mutation=None):
         query = self[query]()
         mutation = self[mutation]()
-        self._add_impl_to_interfaces(query, mutation)
+        self._add_impl_to_interfaces()
         return GraphQLSchema(query=query, mutation=mutation)
 
     def type(self, name):

@@ -3,22 +3,21 @@ from functools import partial
 from graphql.core.type.definition import GraphQLInterfaceType
 from ..utils.get_declared_fields import get_declared_fields
 from ..utils.make_default_resolver import make_default_resolver
-from ..utils.ref_holder import RefHolder
+from ..utils.weak_ref_holder import WeakRefHolder
 from ..utils.yank_potential_fields import yank_potential_fields
 
 
 class InterfaceMeta(type):
     def __new__(mcs, name, bases, attrs):
-        if attrs.get('abstract'):
+        if attrs.pop('abstract', False):
             return super(InterfaceMeta, mcs).__new__(mcs, name, bases, attrs)
 
-        class_ref = RefHolder()
+        class_ref = WeakRefHolder()
         declared_fields = get_declared_fields(name, yank_potential_fields(attrs))
         interface = GraphQLInterfaceType(
             name,
             fields=partial(mcs._build_field_map, class_ref, declared_fields),
             description=attrs.get('__doc__'),
-            resolve_type=lambda: None
         )
 
         mcs._register(interface, declared_fields)

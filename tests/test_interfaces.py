@@ -1,3 +1,4 @@
+from graphql.core import graphql
 from epoxy.registry import TypeRegistry
 
 
@@ -132,3 +133,48 @@ def test_definition_order_wont_affect_field_order():
     human = Human.T
     fields = human.get_fields()
     assert list(fields.keys()) == ['id', 'name', 'friendsWith', 'livesRemaining', 'real', 'hero', 'homePlanet']
+
+
+def test_runtime_type_resolution():
+    R = TypeRegistry()
+
+    class Pet(R.Interface):
+        name = R.String
+
+    class Dog(R.Implements.Pet):
+        bark = R.String
+
+    class Cat(R.Implements.Pet):
+        meow = R.String
+
+    class Query(R.ObjectType):
+        pets = R.Pet.List
+
+    schema = R.Schema(Query)
+
+    data = Query(pets=[
+        Dog(name='Clifford', bark='Really big bark, because it\'s a really big dog.'),
+        Cat(name='Garfield', meow='Lasagna')
+    ])
+
+    result = graphql(schema, '''
+        {
+            pets {
+                name
+                __typename
+                ... on Dog {
+                    bark
+                }
+
+                ... on Cat {
+                    meow
+                }
+            }
+        }
+
+    ''', data)
+    assert not result.errors
+    assert result.data == {
+        'pets': [{'__typename': 'Dog', 'bark': "Really big bark, because it's a really big dog.", 'name': 'Clifford'},
+                 {'__typename': 'Cat', 'meow': 'Lasagna', 'name': 'Garfield'}]
+    }

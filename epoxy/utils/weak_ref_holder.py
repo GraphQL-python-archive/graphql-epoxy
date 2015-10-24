@@ -1,12 +1,14 @@
 from weakref import ReferenceType, ref
 
 
-class RefHolder(object):
-    ref = None
+class WeakRefHolder(object):
+    __slots__ = 'ref',
 
     def __init__(self, ref=None):
         if ref is not None:
             self.set(ref)
+        else:
+            self.ref = None
 
     def _delete_ref(self, ref):
         if ref is self.ref:
