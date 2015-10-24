@@ -16,15 +16,15 @@ from graphql.core.type import (
     GraphQLUnionType
 )
 from graphql.core.type.definition import GraphQLType, get_named_type
-from graphql.core.type.schema import type_map_reducer
-
 import six
-from .bases.object_type import ObjectTypeBase
+
 from .bases.class_type_creator import ClassTypeCreator
+from .bases.object_type import ObjectTypeBase
 from .field import Field
 from .metaclasses.interface import InterfaceMeta
 from .metaclasses.object_type import ObjectTypeMeta
-from .thunk import AttributeTypeThunk, ResolveThunk, RootTypeThunk, ThunkList, TransformThunkList
+from .metaclasses.union import UnionMeta
+from .thunk import AttributeTypeThunk, RootTypeThunk, ThunkList, TransformThunkList
 from .utils.enum_to_graphql_enum import enum_to_graphql_enum
 from .utils.maybe_t import maybe_t
 from .utils.method_dispatch import method_dispatch
