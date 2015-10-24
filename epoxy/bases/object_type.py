@@ -27,6 +27,9 @@ class ObjectTypeBase(object):
             ))
 
     def __repr__(self):
+        if self._field_attr_map is None:
+            return '<{}>'.format(self.T)
+
         return '<{} {}>'.format(
             self.T,
             ' '.join('{}={!r}'.format(field_name, getattr(self, field_name))

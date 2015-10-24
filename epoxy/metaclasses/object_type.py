@@ -58,6 +58,7 @@ class ObjectTypeMeta(type):
         known_interface_resolvers = {}
 
         for interface in interfaces:
+            interface.get_fields() # This triggers the interface to resolve the field thunks.
             fields += registry._get_interface_declared_fields(interface)
 
         for field_attr_name, field in fields:

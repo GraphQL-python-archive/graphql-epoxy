@@ -53,26 +53,27 @@ class TypeRegistry(object):
         self.Interface = self._create_interface_type_class()
 
         for type in builtin_scalars:
-            self.register(type)
+            self.Register(type)
 
     @method_dispatch
-    def register(self, t):
+    def Register(self, t):
         # Can't use dispatch, as it's not an instance, but a subclass of.
         if issubclass(t, Enum):
-            return self.register(enum_to_graphql_enum(t))
+            self.Register(enum_to_graphql_enum(t))
+            return t
 
         raise NotImplementedError('Unable to register {}.'.format(t))
 
-    @register.register(GraphQLObjectType)
-    @register.register(GraphQLUnionType)
-    @register.register(GraphQLEnumType)
-    @register.register(GraphQLInterfaceType)
-    @register.register(GraphQLInputObjectType)
-    @register.register(GraphQLScalarType)
+    @Register.register(GraphQLObjectType)
+    @Register.register(GraphQLUnionType)
+    @Register.register(GraphQLEnumType)
+    @Register.register(GraphQLInterfaceType)
+    @Register.register(GraphQLInputObjectType)
+    @Register.register(GraphQLScalarType)
     def register_(self, t):
         assert not t.name.startswith('_'), \
             'Registered type name cannot start with an "_".'
-        assert t.name not in ('ObjectType', 'Implements', 'Interface', 'Schema'), \
+        assert t.name not in ('ObjectType', 'Implements', 'Interface', 'Schema', 'Register'), \
             'You cannot register a type named "{}".'.format(type.name)
         assert t.name not in self._registered_types, \
             'There is already a registered type named "{}".'.format(type.name)
@@ -105,7 +106,7 @@ class TypeRegistry(object):
         return RootTypeThunk(self, self._resolve_type, item)
 
     def __call__(self, t):
-        return self.register(t)
+        return self.Register(t)
 
     def _create_object_type_class(self, interface_thunk=None):
         registry = self
@@ -113,7 +114,7 @@ class TypeRegistry(object):
         class RegistryObjectTypeMeta(ObjectTypeMeta):
             @staticmethod
             def _register(object_type, type_class):
-                registry.register(object_type)
+                registry.Register(object_type)
                 registry._registered_types_can_be[object_type].add(type_class)
 
             @staticmethod
@@ -139,7 +140,7 @@ class TypeRegistry(object):
         class RegistryInterfaceMeta(InterfaceMeta):
             @staticmethod
             def _register(interface, declared_fields):
-                registry.register(interface)
+                registry.Register(interface)
                 registry._add_interface_declared_fields(interface, declared_fields)
 
             @staticmethod
@@ -157,7 +158,7 @@ class TypeRegistry(object):
         class RegistryUnionMeta(UnionMeta):
             @staticmethod
             def _register(union):
-                registry.register(union)
+                registry.Register(union)
 
             @staticmethod
             def _get_registry():

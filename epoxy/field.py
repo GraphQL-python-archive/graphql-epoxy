@@ -14,4 +14,4 @@ class Field(object):
         self._counter = _counter or gen_id()
 
     def to_field(self, registry, resolver):
-        return GraphQLField(registry[self.type](), self.args, resolver)
+        return GraphQLField(registry[self.type](), args=self.args, resolver=resolver)
