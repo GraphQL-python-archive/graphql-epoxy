@@ -164,12 +164,12 @@ class TypeRegistry(object):
             def _get_registry():
                 return registry
 
-        class Union(six.with_metaclass(RegistryUnionMeta)):
-            abstract = True
-
             @staticmethod
             def _get_types():
                 return TransformThunkList(types_thunk, get_named_type)
+
+        class Union(six.with_metaclass(RegistryUnionMeta)):
+            abstract = True
 
         return Union
 

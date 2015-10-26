@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys
 
-required_packages = ['graphql-core>=0.4.7b0']
+required_packages = ['graphql-core>=0.4.7b1']
 
 if sys.version_info <= (2, 7, 0):
     required_packages.append('enum34>=1.0.4')
