@@ -36,7 +36,7 @@ class ObjectTypeMeta(type):
         return cls
 
     @staticmethod
-    def _register(object_type):
+    def _register(object_type, cls):
         raise NotImplementedError('_register must be implemented in the sub-metaclass')
 
     @staticmethod

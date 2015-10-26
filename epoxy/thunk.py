@@ -69,7 +69,8 @@ class RootTypeThunk(AttributeTypeThunk):
 
     # noinspection PyPep8Naming
     def CanBe(self, klass):
-        raise NotImplementedError('CanBe not yet implemented.')
+        self.registry._register_possible_type_for(self.item, klass)
+        return klass
 
 
 class ThunkList(object):
