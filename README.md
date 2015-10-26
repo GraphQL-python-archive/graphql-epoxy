@@ -7,15 +7,16 @@ Epoxy is a magical tool for rapid development of GraphQL types, schemas, resolve
 * **Quick**: Once you create your schema, epoxy doesn't get in the way. Your resolvers will be called directly by 
 `graphql-core` with no additional indirection.
 
-This codebase is currently a **WORK IN PROGRESS** and does not currently work. If you're looking for a pythonic 
-`graphql-core` wrapper, check out [`graphene`](https://github.com/graphql-python/graphene).
+This codebase is currently a **WORK IN PROGRESS**, and is currently at alpha stages. The API may change without notice. 
+If you're looking for a more stable pythonic `graphql-core` wrapper, check out 
+[`graphene`](https://github.com/graphql-python/graphene).
 
 ## Installation
 
 Epoxy is available on pypi under the package name `graphql-epoxy`, you can get it by running:
 
 ```sh
-pip install graphql-epoxy
+pip install graphql-epoxy==0.1a0
 ```
 
 ## Usage
@@ -130,7 +131,7 @@ type Query {
 
 Notice that `epoxy` converted snake_cased fields to camelCase in the GraphQL Schema.
 
-## ObjectTypes become containers (Coming Soon)
+## ObjectTypes become containers
 
 You can bring your own objects, (like a Django or SQLAlchemy model), or you can use the class you just created:
 
