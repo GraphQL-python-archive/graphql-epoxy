@@ -128,7 +128,7 @@ type Query {
 }
 ```
 
-Notice that `epoxy` converted snake_cased fields to camel_case in the GraphQL Schema.
+Notice that `epoxy` converted snake_cased fields to camelCase in the GraphQL Schema.
 
 ## ObjectTypes become containers (Coming Soon)
 
