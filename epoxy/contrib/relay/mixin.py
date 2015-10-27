@@ -5,11 +5,11 @@ from .utils import base64, unbase64
 
 
 class RelayMixin(object):
-    def __init__(self, registry):
+    def __init__(self, registry, data_source):
         self.R = registry
+        self.data_source = data_source
         self._node_field = None
         self._connections = {}
-        self.data_source = None
 
     @property
     def NodeField(self):
@@ -24,9 +24,6 @@ class RelayMixin(object):
             },
             resolver=lambda obj, args, info: self.fetch_node(args.get('id'), info)
         )
-
-    def set_data_source(self, data_source):
-        self.data_source = data_source
 
     def get_connection_and_edge_types(self, type_name):
         return self._connections[type_name]
@@ -78,8 +75,11 @@ class RelayMixin(object):
         self._connections[name] = Connection, Edge
         return Connection, Edge
 
-    def Connection(self, name, object_type, args=None, **kwargs):
+    def Connection(self, name, object_type, args=None, resolver=None, **kwargs):
         args = args or {}
         args.update(connection_args)
-        field = self.R.Field(self.connection_definitions(name, object_type)[0], args=args, **kwargs)
+        if not resolver:
+            resolver = self.data_source.make_connection_resolver(self, object_type)
+
+        field = self.R.Field(self.connection_definitions(name, object_type)[0], args=args, resolver=resolver, **kwargs)
         return field

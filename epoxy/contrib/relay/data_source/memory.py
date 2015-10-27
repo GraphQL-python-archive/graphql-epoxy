@@ -1,10 +1,11 @@
 from collections import defaultdict
-
 from operator import attrgetter
+
 from ..connections.sorted_collection import SortedCollection
+from .base import BaseDataSource
 
 
-class InMemoryDataSource(object):
+class InMemoryDataSource(BaseDataSource):
     def __init__(self):
         self.objects_by_type_and_id = defaultdict(dict)
         self.objects_by_type = defaultdict(lambda: SortedCollection(key=attrgetter('id')))
@@ -15,9 +16,6 @@ class InMemoryDataSource(object):
 
     def fetch_node(self, object_type, id, resolve_info):
         return self.objects_by_type_and_id[object_type].get(id)
-
-    def get_collection(self, object_type):
-        return self.objects_by_type[object_type()]
 
     def make_connection_resolver(self, relay, object_type_thunk):
         def resolver(obj, args, info):

@@ -6,7 +6,7 @@ from epoxy.registry import TypeRegistry
 
 def test_relay_node_definition():
     R = TypeRegistry()
-    Relay = R.Mixin(RelayMixin)
+    Relay = R.Mixin(RelayMixin, InMemoryDataSource())
 
     class Pet(R.Implements[R.Node]):
         name = R.String
@@ -30,7 +30,7 @@ def test_relay_node_definition():
 
 def test_relay_node_definition_using_custom_type():
     R = TypeRegistry()
-    Relay = R.Mixin(RelayMixin)
+    Relay = R.Mixin(RelayMixin, InMemoryDataSource())
 
     class Pet(R.Implements[R.Node]):
         name = R.String
@@ -59,10 +59,10 @@ def test_relay_node_definition_using_custom_type():
 
 
 def test_relay_node_field_resolver():
-    R = TypeRegistry()
-    Relay = R.Mixin(RelayMixin)
     data_source = InMemoryDataSource()
-    Relay.set_data_source(data_source)
+
+    R = TypeRegistry()
+    Relay = R.Mixin(RelayMixin, data_source)
 
     class Pet(R.Implements[R.Node]):
         name = R.String

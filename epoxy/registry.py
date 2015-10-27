@@ -219,8 +219,8 @@ class TypeRegistry(object):
         self._add_impl_to_interfaces()
         return GraphQLSchema(query=query, mutation=mutation)
 
-    def Mixin(self, mixin_cls):
-        mixin = mixin_cls(self)
+    def Mixin(self, mixin_cls, *args, **kwargs):
+        mixin = mixin_cls(self, *args, **kwargs)
         mixin.register_types()
         return mixin
 

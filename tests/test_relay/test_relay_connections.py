@@ -14,19 +14,18 @@ pet_names = ["Max", "Buddy", "Charlie", "Jack", "Cooper", "Rocky", "Toby", "Tuck
              "Spike", "Gunner", "Sparky", "Mickey", "Kobe", "Chase", "Oreo", "Frankie", "Mac", "Benji", "Bubba",
              "Champ", "Brady", "Elvis", "Copper", "Cash", "Archie", "Walter"]
 
+data_source = InMemoryDataSource()
+
 R = TypeRegistry()
-Relay = R.Mixin(RelayMixin)
+Relay = R.Mixin(RelayMixin, data_source)
 
 
-class Pet(R.Implements[R.Node]):
+class Pet(R.Implements[Relay.Node]):
     name = R.String
 
 
-data_source = InMemoryDataSource()
-
-
 class Query(R.ObjectType):
-    pets = Relay.Connection('Pet', R.Pet, resolver=data_source.make_connection_resolver(Relay, R.Pet))
+    pets = Relay.Connection('Pet', R.Pet)
     node = Relay.NodeField
 
 
