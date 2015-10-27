@@ -23,7 +23,7 @@ def get_declared_fields(type_name, attrs):
         if isinstance(obj, TypeThunk):
             counter = obj._counter
 
-            field = Field(obj, name=to_camel_case(field_attr_name), _counter=counter)
+            field = Field(obj, name=to_camel_case(field_attr_name), _counter=counter, **(obj._kwargs or {}))
             fields.append((field_attr_name, field))
 
     fields.sort(key=lambda f: f[1]._counter)

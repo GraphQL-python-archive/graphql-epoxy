@@ -1,9 +1,22 @@
+import copy
 from graphql.core.type.definition import GraphQLList, GraphQLNonNull
-from epoxy.utils.gen_id import gen_id
-from epoxy.utils.maybe_callable import maybe_callable
+from .utils.gen_id import gen_id
+from .utils.maybe_callable import maybe_callable
+
+
+def clone_with_kwargs(thunk, kwargs):
+    old_kwargs = thunk._kwargs
+    if old_kwargs:
+        kwargs = old_kwargs.copy().update(kwargs)
+
+    clone = copy.copy(thunk)
+    clone._kwargs = kwargs
+    return clone
 
 
 class TypeThunk(object):
+    _kwargs = None
+
     def __init__(self):
         self._counter = gen_id()
 
@@ -26,11 +39,16 @@ class IdentityTypeThunk(TypeThunk, ContainerTypeMixin):
         super(IdentityTypeThunk, self).__init__()
         self.item = item
 
-    def __call__(self):
+    def __call__(self, **kwargs):
+        if kwargs:
+            return clone_with_kwargs(self, kwargs)
+
         return self.item
 
 
 class ResolveThunkMixin(object):
+    _kwargs = None
+
     def __init__(self, getter, item):
         self.getter = getter
         self.item = item
@@ -41,7 +59,10 @@ class ResolveThunkMixin(object):
 
         return maybe_callable(self.getter(item))
 
-    def __call__(self):
+    def __call__(self, **kwargs):
+        if kwargs:
+            return clone_with_kwargs(self, kwargs)
+
         return self._resolve(self.item)
 
 
@@ -55,6 +76,9 @@ class AttributeTypeThunk(ResolveThunkMixin, ContainerTypeMixin, TypeThunk):
         ContainerTypeMixin.__init__(self)
         TypeThunk.__init__(self)
 
+        if isinstance(item, TypeThunk):
+            self._kwargs = item._kwargs
+
     def __repr__(self):
         return '<AttributeTypeThunk {}>'.format(self.item)
 
@@ -64,7 +88,10 @@ class RootTypeThunk(AttributeTypeThunk):
         AttributeTypeThunk.__init__(self, getter, item)
         self.registry = registry
 
-    def __call__(self):
+    def __call__(self, **kwargs):
+        if kwargs:
+            return clone_with_kwargs(self, kwargs)
+
         return self._resolve(self.item)
 
     # noinspection PyPep8Naming

@@ -13,6 +13,7 @@ class ObjectTypeMeta(type):
         if attrs.pop('abstract', False):
             return super(ObjectTypeMeta, mcs).__new__(mcs, name, bases, attrs)
 
+        name = attrs.pop('_name', name)
         class_ref = WeakRefHolder()
         registry = mcs._get_registry()
         declared_fields = get_declared_fields(name, yank_potential_fields(attrs))

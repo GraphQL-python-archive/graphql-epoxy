@@ -48,6 +48,7 @@ class TypeRegistry(object):
         self._interface_declared_fields = {}
         self._registered_types_can_be = defaultdict(set)
         self._pending_types_can_be = defaultdict(set)
+        self._proxy = ResolvedRegistryProxy(self)
         self.ObjectType = self._create_object_type_class()
         self.Implements = ClassTypeCreator(self, self._create_object_type_class)
         self.Union = ClassTypeCreator(self, self._create_union_type_class)
@@ -75,9 +76,9 @@ class TypeRegistry(object):
         assert not t.name.startswith('_'), \
             'Registered type name cannot start with an "_".'
         assert t.name not in ('ObjectType', 'Implements', 'Interface', 'Schema', 'Register'), \
-            'You cannot register a type named "{}".'.format(type.name)
+            'You cannot register a type named "{}".'.format(t.name)
         assert t.name not in self._registered_types, \
-            'There is already a registered type named "{}".'.format(type.name)
+            'There is already a registered type named "{}".'.format(t.name)
 
         self._registered_types[t.name] = t
         return t
@@ -218,14 +219,31 @@ class TypeRegistry(object):
         self._add_impl_to_interfaces()
         return GraphQLSchema(query=query, mutation=mutation)
 
+    def Mixin(self, mixin_cls):
+        mixin = mixin_cls(self)
+        mixin.register_types()
+        return mixin
+
     def type(self, name):
         return self[name]()
 
     def types(self, *names):
         return self[names]
 
-    def with_resolved_types(self, callable):
-        assert isinstance(callable, callable)
+    def with_resolved_types(self, thunk):
+        assert isinstance(thunk, callable)
+        return partial(thunk, self._proxy)
+
+
+class ResolvedRegistryProxy(object):
+    def __init__(self, registry):
+        self._registry = registry
+
+    def __getitem__(self, item):
+        return self._registry[item]()
+
+    def __getattr__(self, item):
+        return self._registry[item]()
 
 
 __all__ = ['TypeRegistry']
