@@ -164,9 +164,100 @@ class RealHumanBean(models.Model):
 R.Human.CanBe(Human)
 ```
 
+## Relay Support (WIP)
+ - [x] Node
+ - [x] Connection & Edges
+ - [ ] Mutations
+
+At this point, Epoxy has rudimentary `relay` support. Enable support for `Relay` by mixing in the `RelayMixin` using
+`TypeResolver.Mixin`. 
+
+```python
+from epoxy.contrib.relay import RelayMixin
+from epoxy.contrib.relay.data_source.memory import InMemoryDataSource
+
+# Epoxy provides an "in memory" data source, that implements `epoxy.contrib.relay.data_source.BaseDataSource`,
+# which can be used to easily create a mock data source. In practice, you'd implement your own data source.
+data_source = InMemoryDataSource()
+
+R = TypeRegistry()
+Relay = R.Mixin(RelayMixin, data_source)
+```
+
+### Node Definition
+Once `RelayMixin` has been mixed into the Registry, things can subclass `Node` automatically!
+
+```python
+
+class Pet(R.Implements[Relay.Node]):
+    name = R.String
+    
+```
+
+### Connection Definition & `NodeField`
+Connections can be defined upon any object type. Here we'll make a `Query` root node that provides a connection
+to a list of pets & a node field to resolve an indivudal node. 
+
+```python
+
+class Query(R.ObjectType):
+    pets = Relay.Connection('Pet', R.Pet) # The duplicate 'Pet' definition is just temporary and will be removed.
+    node = Relay.NodeField
+
+```
+
+### Adding some data!
+Let's add some pets to the `data_source` and query them!
+
+```python
+
+# Schema has to be defined so that all thunks are resolved before we can use `Pet` as a container.
+Schema = R.Schema(R.Query)
+
+pet_names = ["Max", "Buddy", "Charlie", "Jack", "Cooper", "Rocky"]
+
+for i, pet_name in enumerate(pet_names, 1):
+    data_source.add(Pet(id=i, name=pet_name))
+
+```
+
+
+### Running Relay Connection Query:
+
+```python
+
+result = graphql(Schema, '''
+{
+    pets(first: 5) {
+        edges {
+            node {
+                id
+                name
+            }
+            cursor
+        }
+        pageInfo {
+            hasPreviousPage
+            hasNextPage
+            startCursor
+            endCursor
+        }
+    }
+    node(id: "UGV0OjU=") {
+        id
+        ... on Pet {
+            name
+        }
+    }
+}
+''')
+```
+
+
 ## Mutations (Coming Soon)
 
-Epoxy also supports defining mutations:
+Epoxy also supports defining mutations. Making a Mutation a Relay mutation is as simple as changing `R.Mutation` to 
+`Relay.Mutation`.
 
 
 ```python
