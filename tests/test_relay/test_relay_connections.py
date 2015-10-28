@@ -4,15 +4,7 @@ from epoxy.contrib.relay.data_source.memory import InMemoryDataSource
 from epoxy.contrib.relay.utils import base64
 from epoxy.registry import TypeRegistry
 
-pet_names = ["Max", "Buddy", "Charlie", "Jack", "Cooper", "Rocky", "Toby", "Tucker", "Jake", "Bear", "Duke", "Teddy",
-             "Oliver", "Riley", "Bailey", "Bentley", "Milo", "Buster", "Cody", "Dexter", "Winston", "Murphy", "Leo",
-             "Lucky", "Oscar", "Louie", "Zeus", "Henry", "Sam", "Harley", "Baxter", "Gus", "Sammy", "Jackson", "Bruno",
-             "Diesel", "Jax", "Gizmo", "Bandit", "Rusty", "Marley", "Jasper", "Brody", "Roscoe", "Hank", "Otis", "Bo",
-             "Joey", "Beau", "Ollie", "Tank", "Shadow", "Peanut", "Hunter", "Scout", "Blue", "Rocco", "Simba", "Tyson",
-             "Ziggy", "Boomer", "Romeo", "Apollo", "Ace", "Luke", "Rex", "Finn", "Chance", "Rudy", "Loki", "Moose",
-             "George", "Samson", "Coco", "Benny", "Thor", "Rufus", "Prince", "Chester", "Brutus", "Scooter", "Chico",
-             "Spike", "Gunner", "Sparky", "Mickey", "Kobe", "Chase", "Oreo", "Frankie", "Mac", "Benji", "Bubba",
-             "Champ", "Brady", "Elvis", "Copper", "Cash", "Archie", "Walter"]
+letter_chars = ['A', 'B', 'C', 'D', 'E']
 
 data_source = InMemoryDataSource()
 
@@ -20,32 +12,53 @@ R = TypeRegistry()
 Relay = R.Mixin(RelayMixin, data_source)
 
 
-class Pet(R.Implements[Relay.Node]):
-    name = R.String
+class Letter(R.Implements[Relay.Node]):
+    letter = R.String
 
 
 class Query(R.ObjectType):
-    pets = Relay.Connection('Pet', R.Pet)
+    letters = Relay.Connection('Letter', R.Letter)
     node = Relay.NodeField
 
 
 Schema = R.Schema(R.Query)
 
-pets = []
-for i, pet_name in enumerate(pet_names, 1):
-    pet = Pet(id=i, name=pet_name)
-    pets.append(pet)
-    data_source.add(pet)
+letters = {}
+for i, letter in enumerate(letter_chars, 1):
+    l = Letter(id=i, letter=letter)
+    letters[letter] = l
+    data_source.add(l)
 
 
-def test_query_pets_all():
-    result = graphql(Schema, '''
+def edges(selected_letters):
+    return [
+        {
+            'node': {
+                'id': base64('Letter:%s' % l.id),
+                'letter': l.letter
+            },
+            'cursor': base64('sc:%s' % l.id)
+        }
+        for l in [letters[i] for i in selected_letters]
+    ]
+
+
+def cursor_for(ltr):
+    l = letters[ltr]
+    return base64('sc:%s' % l.id)
+
+
+def execute(args=''):
+    if args:
+        args = '(' + args + ')'
+
+    return graphql(Schema, '''
     {
-        pets {
+        letters%s {
             edges {
                 node {
                     id
-                    name
+                    letter
                 }
                 cursor
             }
@@ -57,272 +70,99 @@ def test_query_pets_all():
             }
         }
     }
-    ''')
+    ''' % args)
 
-    expected_edges = [
-        {
-            'node': {
-                'id': base64('Pet:%s' % p.id),
-                'name': p.name
-            },
-            'cursor': base64('sc:%s' % p.id)
-        }
-        for p in pets
-        ]
 
+def check(args, letters, has_previous_page=False, has_next_page=False):
+    result = execute(args)
+    expected_edges = edges(letters)
     expected_page_info = {
-        'hasNextPage': False,
-        'hasPreviousPage': False,
-        'endCursor': expected_edges[-1]['cursor'],
-        'startCursor': expected_edges[0]['cursor']
+        'hasPreviousPage': has_previous_page,
+        'hasNextPage': has_next_page,
+        'endCursor': expected_edges[-1]['cursor'] if expected_edges else None,
+        'startCursor': expected_edges[0]['cursor'] if expected_edges else None
     }
 
     assert not result.errors
     assert result.data == {
-        'pets': {
+        'letters': {
             'edges': expected_edges,
             'pageInfo': expected_page_info
         }
     }
 
 
-def test_query_pets_first_5():
-    result = graphql(Schema, '''
-    {
-        pets(first: 5) {
-            edges {
-                node {
-                    id
-                    name
-                }
-                cursor
-            }
-            pageInfo {
-                hasPreviousPage
-                hasNextPage
-                startCursor
-                endCursor
-            }
-        }
-    }
-    ''')
-
-    expected_edges = [
-        {
-            'node': {
-                'id': base64('Pet:%s' % p.id),
-                'name': p.name
-            },
-            'cursor': base64('sc:%s' % p.id)
-        }
-        for p in pets[:5]
-        ]
-
-    expected_page_info = {
-        'hasNextPage': True,
-        'hasPreviousPage': False,
-        'endCursor': expected_edges[-1]['cursor'],
-        'startCursor': expected_edges[0]['cursor']
-    }
-
-    assert not result.errors
-    assert result.data == {
-        'pets': {
-            'edges': expected_edges,
-            'pageInfo': expected_page_info
-        }
-    }
+def test_returns_all_elements_without_filters():
+    check('', 'ABCDE')
 
 
-def test_query_pets_last_5():
-    result = graphql(Schema, '''
-    {
-        pets(last: 5) {
-            edges {
-                node {
-                    id
-                    name
-                }
-                cursor
-            }
-            pageInfo {
-                hasPreviousPage
-                hasNextPage
-                startCursor
-                endCursor
-            }
-        }
-    }
-    ''')
-
-    expected_edges = [
-        {
-            'node': {
-                'id': base64('Pet:%s' % p.id),
-                'name': p.name
-            },
-            'cursor': base64('sc:%s' % p.id)
-        }
-        for p in pets[-5:]
-        ]
-
-    expected_page_info = {
-        'hasNextPage': False,
-        'hasPreviousPage': True,
-        'endCursor': expected_edges[-1]['cursor'],
-        'startCursor': expected_edges[0]['cursor']
-    }
-
-    assert not result.errors
-    assert result.data == {
-        'pets': {
-            'edges': expected_edges,
-            'pageInfo': expected_page_info
-        }
-    }
+def test_respects_a_smaller_first():
+    check('first: 2', 'AB', has_next_page=True)
 
 
-def test_query_pets_first_10_last_5():
-    result = graphql(Schema, '''
-    {
-        pets(first: 10, last: 5) {
-            edges {
-                node {
-                    id
-                    name
-                }
-                cursor
-            }
-            pageInfo {
-                hasPreviousPage
-                hasNextPage
-                startCursor
-                endCursor
-            }
-        }
-    }
-    ''')
-
-    expected_edges = [
-        {
-            'node': {
-                'id': base64('Pet:%s' % p.id),
-                'name': p.name
-            },
-            'cursor': base64('sc:%s' % p.id)
-        }
-        for p in pets[:10][-5:]
-        ]
-
-    expected_page_info = {
-        'hasNextPage': True,
-        'hasPreviousPage': True,
-        'endCursor': expected_edges[-1]['cursor'],
-        'startCursor': expected_edges[0]['cursor']
-    }
-
-    assert not result.errors
-    assert result.data == {
-        'pets': {
-            'edges': expected_edges,
-            'pageInfo': expected_page_info
-        }
-    }
+def test_respects_an_overly_large_first():
+    check('first: 10', 'ABCDE')
 
 
-def test_after_cursor():
-    result = graphql(Schema, '''
-    {
-        pets(first: 10, after: "c2M6MTA=") {
-            edges {
-                node {
-                    id
-                    name
-                }
-                cursor
-            }
-            pageInfo {
-                hasPreviousPage
-                hasNextPage
-                startCursor
-                endCursor
-            }
-        }
-    }
-    ''')
-
-    expected_edges = [
-        {
-            'node': {
-                'id': base64('Pet:%s' % p.id),
-                'name': p.name
-            },
-            'cursor': base64('sc:%s' % p.id)
-        }
-        for p in pets[9:19]
-        ]
-
-    assert len(expected_edges) == 10
-    expected_page_info = {
-        'hasNextPage': True,
-        'hasPreviousPage': False,
-        'endCursor': expected_edges[-1]['cursor'],
-        'startCursor': expected_edges[0]['cursor']
-    }
-
-    assert not result.errors
-    assert result.data == {
-        'pets': {
-            'edges': expected_edges,
-            'pageInfo': expected_page_info
-        }
-    }
+def test_respects_a_smaller_last():
+    check('last: 2', 'DE', has_previous_page=True)
 
 
-def test_before_cursor():
-    result = graphql(Schema, '''
-    {
-        pets(first: 10, before: "c2M6MTA=") {
-            edges {
-                node {
-                    id
-                    name
-                }
-                cursor
-            }
-            pageInfo {
-                hasPreviousPage
-                hasNextPage
-                startCursor
-                endCursor
-            }
-        }
-    }
-    ''')
+def test_respects_an_overly_large_last():
+    check('last: 10', 'ABCDE')
 
-    expected_edges = [
-        {
-            'node': {
-                'id': base64('Pet:%s' % p.id),
-                'name': p.name
-            },
-            'cursor': base64('sc:%s' % p.id)
-        }
-        for p in pets[:10]
-        ]
 
-    assert len(expected_edges) == 10
-    expected_page_info = {
-        'hasNextPage': False,
-        'hasPreviousPage': False,
-        'endCursor': expected_edges[-1]['cursor'],
-        'startCursor': expected_edges[0]['cursor']
-    }
+def test_respects_first_and_after():
+    check('first: 2, after: "{}"'.format(cursor_for('B')), 'CD', has_next_page=True)
 
-    assert not result.errors
-    assert result.data == {
-        'pets': {
-            'edges': expected_edges,
-            'pageInfo': expected_page_info
-        }
-    }
+
+def test_respects_first_and_after_with_long_first():
+    check('first: 10, after: "{}"'.format(cursor_for('B')), 'CDE')
+
+
+def test_respects_last_and_before():
+    check('last: 2, before: "{}"'.format(cursor_for('D')), 'BC', has_previous_page=True)
+
+
+def test_respects_last_and_before_with_long_last():
+    check('last: 10, before: "{}"'.format(cursor_for('D')), 'ABC')
+
+
+def test_respects_first_and_after_and_before_too_few():
+    check('first: 2, after: "{}", before: "{}"'.format(cursor_for('A'), cursor_for('E')), 'BC', has_next_page=True)
+
+
+def test_respects_first_and_after_and_before_too_many():
+    check('first: 4, after: "{}", before: "{}"'.format(cursor_for('A'), cursor_for('E')), 'BCD')
+
+
+def test_respects_first_and_after_and_before_exactly_right():
+    check('first: 3, after: "{}", before: "{}"'.format(cursor_for('A'), cursor_for('E')), "BCD")
+
+
+def test_respects_last_and_after_and_before_too_few():
+    check('last: 2, after: "{}", before: "{}"'.format(cursor_for('A'), cursor_for('E')), 'CD', has_previous_page=True)
+
+
+def test_respects_last_and_after_and_before_too_many():
+    check('last: 4, after: "{}", before: "{}"'.format(cursor_for('A'), cursor_for('E')), 'BCD')
+
+
+def test_respects_last_and_after_and_before_exactly_right():
+    check('last: 3, after: "{}", before: "{}"'.format(cursor_for('A'), cursor_for('E')), 'BCD')
+
+
+def test_returns_no_elements_if_first_is_0():
+    check('first: 0', '', has_next_page=True)
+
+
+def test_returns_all_elements_if_cursors_are_invalid():
+    check('before: "invalid" after: "invalid"', 'ABCDE')
+
+
+def test_returns_all_elements_if_cursors_are_on_the_outside():
+    check('before: "{}" after: "{}"'.format(base64('sc:%s' % 6), base64('sc:%s' % 0)), 'ABCDE')
+
+
+def test_returns_no_elements_if_cursors_cross():
+    check('before: "{}" after: "{}"'.format(base64('sc:%s' % 2), base64('sc:%s' % 4)), '')
