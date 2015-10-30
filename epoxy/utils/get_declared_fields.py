@@ -7,23 +7,21 @@ from ..utils.maybe_t import maybe_t
 from ..utils.to_camel_case import to_camel_case
 
 
-def get_declared_fields(type_name, attrs):
+def get_declared_fields(type_name, attrs, field_class=Field):
     fields = []
 
     for field_attr_name, obj in list(attrs.items()):
-        if isinstance(obj, Field):
+        if isinstance(obj, field_class):
             field = copy.copy(obj)
             field.name = first_of(field.name, to_camel_case(field_attr_name))
             # Bind field.type to the maybe scope.
             field.type = (lambda field_type: lambda: maybe_t(maybe_callable(field_type)))(field.type)
             fields.append((field_attr_name, field))
 
-            continue
-
-        if isinstance(obj, TypeThunk):
+        elif isinstance(obj, TypeThunk):
             counter = obj._counter
 
-            field = Field(obj, name=to_camel_case(field_attr_name), _counter=counter, **(obj._kwargs or {}))
+            field = field_class(obj, name=to_camel_case(field_attr_name), _counter=counter, **(obj._kwargs or {}))
             fields.append((field_attr_name, field))
 
     fields.sort(key=lambda f: f[1]._counter)

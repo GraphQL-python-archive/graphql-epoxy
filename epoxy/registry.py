@@ -19,8 +19,10 @@ from graphql.core.type.definition import GraphQLType, get_named_type
 import six
 
 from .bases.class_type_creator import ClassTypeCreator
+from .bases.input_type import InputTypeBase
 from .bases.object_type import ObjectTypeBase
-from .field import Field
+from .field import Field, InputField
+from .metaclasses.input_type import InputTypeMeta
 from .metaclasses.interface import InterfaceMeta
 from .metaclasses.object_type import ObjectTypeMeta
 from .metaclasses.union import UnionMeta
@@ -39,8 +41,17 @@ builtin_scalars = [
 
 
 class TypeRegistry(object):
-    # Fields
+    _reserved_names = frozenset([
+        # Types
+        'ObjectType', 'InputType', 'Union' 'Interface', 'Implements',
+        # Functions
+        'Schema', 'Register', 'Mixin',
+        # Fields
+        'Field', 'InputField',
+    ])
+
     Field = Field
+    InputField = InputField
 
     def __init__(self):
         self._registered_types = {}
@@ -50,6 +61,7 @@ class TypeRegistry(object):
         self._pending_types_can_be = defaultdict(set)
         self._proxy = ResolvedRegistryProxy(self)
         self.ObjectType = self._create_object_type_class()
+        self.InputType = self._create_input_type_class()
         self.Implements = ClassTypeCreator(self, self._create_object_type_class)
         self.Union = ClassTypeCreator(self, self._create_union_type_class)
         self.Interface = self._create_interface_type_class()
@@ -75,7 +87,7 @@ class TypeRegistry(object):
     def register_(self, t):
         assert not t.name.startswith('_'), \
             'Registered type name cannot start with an "_".'
-        assert t.name not in ('ObjectType', 'Implements', 'Interface', 'Schema', 'Register'), \
+        assert t.name not in self._reserved_names, \
             'You cannot register a type named "{}".'.format(t.name)
         assert t.name not in self._registered_types, \
             'There is already a registered type named "{}".'.format(t.name)
@@ -174,6 +186,24 @@ class TypeRegistry(object):
             abstract = True
 
         return Union
+
+    def _create_input_type_class(self):
+        registry = self
+
+        class RegistryInputTypeMeta(InputTypeMeta):
+            @staticmethod
+            def _register(input_type):
+                registry.Register(input_type)
+
+            @staticmethod
+            def _get_registry():
+                return registry
+
+        @six.add_metaclass(RegistryInputTypeMeta)
+        class InputType(InputTypeBase):
+            abstract = True
+
+        return InputType
 
     def _create_is_type_of(self, type):
         return partial(self._is_type_of, type)
