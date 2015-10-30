@@ -21,10 +21,10 @@ import six
 from .bases.class_type_creator import ClassTypeCreator
 from .bases.input_type import InputTypeBase
 from .bases.object_type import ObjectTypeBase
-from epoxy.metaclasses.mutation import MutationMeta
 from .field import Field, InputField
 from .metaclasses.input_type import InputTypeMeta
 from .metaclasses.interface import InterfaceMeta
+from .metaclasses.mutation import MutationMeta
 from .metaclasses.object_type import ObjectTypeMeta
 from .metaclasses.union import UnionMeta
 from .thunk import AttributeTypeThunk, RootTypeThunk, ThunkList, TransformThunkList
