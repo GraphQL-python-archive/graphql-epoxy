@@ -1,4 +1,4 @@
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 from enum import Enum
 from functools import partial
 from graphql.core.type import (
@@ -63,13 +63,13 @@ class TypeRegistry(object):
         self._registered_types_can_be = defaultdict(set)
         self._pending_types_can_be = defaultdict(set)
         self._proxy = ResolvedRegistryProxy(self)
+        self._mutations = {}
         self.ObjectType = self._create_object_type_class()
         self.InputType = self._create_input_type_class()
         self.Implements = ClassTypeCreator(self, self._create_object_type_class)
         self.Union = ClassTypeCreator(self, self._create_union_type_class)
         self.Interface = self._create_interface_type_class()
         self.Mutation = self._create_mutation_type_class()
-        self._mutations = {}
 
         for type in builtin_scalars:
             self.Register(type)
