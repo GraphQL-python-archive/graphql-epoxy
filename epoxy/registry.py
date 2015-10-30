@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from enum import Enum
 from functools import partial
 from graphql.core.type import (
@@ -21,6 +21,7 @@ import six
 from .bases.class_type_creator import ClassTypeCreator
 from .bases.input_type import InputTypeBase
 from .bases.object_type import ObjectTypeBase
+from epoxy.metaclasses.mutation import MutationMeta
 from .field import Field, InputField
 from .metaclasses.input_type import InputTypeMeta
 from .metaclasses.interface import InterfaceMeta
@@ -46,6 +47,8 @@ class TypeRegistry(object):
         'ObjectType', 'InputType', 'Union' 'Interface', 'Implements',
         # Functions
         'Schema', 'Register', 'Mixin',
+        # Mutations
+        'Mutation', 'Mutations',
         # Fields
         'Field', 'InputField',
     ])
@@ -65,6 +68,8 @@ class TypeRegistry(object):
         self.Implements = ClassTypeCreator(self, self._create_object_type_class)
         self.Union = ClassTypeCreator(self, self._create_union_type_class)
         self.Interface = self._create_interface_type_class()
+        self.Mutation = self._create_mutation_type_class()
+        self._mutations = {}
 
         for type in builtin_scalars:
             self.Register(type)
@@ -111,6 +116,9 @@ class TypeRegistry(object):
         return value
 
     def __getattr__(self, item):
+        if item.startswith('_'):
+            raise AttributeError(item)
+
         return RootTypeThunk(self, self._resolve_type, item)
 
     def __getitem__(self, item):
@@ -205,6 +213,44 @@ class TypeRegistry(object):
 
         return InputType
 
+    def _create_mutation_type_class(self):
+        registry = self
+
+        class RegistryInputTypeMeta(MutationMeta):
+            @staticmethod
+            def _register(mutation_name, mutation):
+                registry._register_mutation(mutation_name, mutation)
+
+            @staticmethod
+            def _get_registry():
+                return registry
+
+        @six.add_metaclass(RegistryInputTypeMeta)
+        class InputType(InputTypeBase):
+            abstract = True
+
+        return InputType
+
+    def _register_mutation(self, mutation_name, mutation):
+        assert mutation_name not in self._mutations, \
+            'There is already a registered mutation named "{}".'.format(mutation_name)
+
+        self._mutations[mutation_name] = mutation
+
+    @property
+    def Mutations(self):
+        if not self._mutations:
+            raise TypeError("No mutations have been registered.")
+
+        mutations = OrderedDict()
+        for k in sorted(self._mutations.keys()):
+            mutations[k] = self._mutations[k]()
+
+        return GraphQLObjectType(
+            name='Mutations',
+            fields=mutations
+        )
+
     def _create_is_type_of(self, type):
         return partial(self._is_type_of, type)
 
@@ -261,7 +307,7 @@ class TypeRegistry(object):
         return self[names]
 
     def with_resolved_types(self, thunk):
-        assert isinstance(thunk, callable)
+        assert callable(thunk)
         return partial(thunk, self._proxy)
 
 
@@ -273,6 +319,9 @@ class ResolvedRegistryProxy(object):
         return self._registry[item]()
 
     def __getattr__(self, item):
+        if item.startswith('_'):
+            raise AttributeError(item)
+
         return self._registry[item]()
 
 

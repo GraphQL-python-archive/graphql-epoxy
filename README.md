@@ -263,10 +263,10 @@ Epoxy also supports defining mutations. Making a Mutation a Relay mutation is as
 ```python
 
 class AddFriend(R.Mutation):
-    class Input(R.InputType):
+    class Input:
         human_to_add = R.ID.NonNull
         
-    class Output(R.OutputType):
+    class Output:
         new_friends_list = R.Human.List
         
     @R.resolve_with_args
