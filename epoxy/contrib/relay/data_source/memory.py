@@ -15,6 +15,13 @@ class InMemoryDataSource(BaseDataSource):
         self.objects_by_type_and_id[obj.T][text_type(obj.id)] = obj
         self.objects_by_type[obj.T].insert(obj)
 
+    def remove(self, obj):
+        del self.objects_by_type_and_id[obj.T][text_type(obj.id)]
+        self.objects_by_type[obj.T].remove(obj)
+
+    def get_edge(self, relay, obj):
+        return self.objects_by_type[obj.T].get_edge(relay, obj.T.name, obj)
+
     def fetch_node(self, object_type, id, resolve_info):
         return self.objects_by_type_and_id[object_type].get(text_type(id))
 

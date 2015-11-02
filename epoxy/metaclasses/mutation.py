@@ -40,7 +40,8 @@ class MutationMeta(type):
             args={
                 'input': GraphQLArgument(GraphQLNonNull(R[Input]))
             },
-            resolver=functools.partial(mcs._process_resolver, resolver, Input)
+            resolver=functools.partial(mcs._process_resolver, resolver, Input),
+            description=attrs.get('__doc__', None)
         )))
 
     @staticmethod

@@ -99,6 +99,10 @@ class SortedCollection(object):
             )
         )
 
+    def get_edge(self, relay, type_name, node):
+        Connection, Edge = relay.get_connection_and_edge_types(type_name)
+        return Edge(node=node, cursor=cursor.from_offset(self._key(node)))
+
     def get_connection(self, relay, type_name, args):
         Connection, Edge = relay.get_connection_and_edge_types(type_name)
         before = args.get('before')

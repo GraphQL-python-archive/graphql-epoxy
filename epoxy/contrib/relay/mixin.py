@@ -38,7 +38,7 @@ class RelayMixin(object):
         class Node(R.Interface):
             id = R.ID.NonNull(description='The id of the object.')
 
-            resolve_id = self.resolve_node_id
+            resolve_id = self._resolve_node_id
 
         class PageInfo(R.ObjectType):
             has_next_page = R.Boolean.NonNull(description='When paginating forwards, are there more items?')
@@ -55,9 +55,12 @@ class RelayMixin(object):
         assert isinstance(object_type, GraphQLObjectType)
         return self.data_source.fetch_node(object_type, object_id, info)
 
-    def resolve_node_id(self, obj, args, info):
-        type = self.R.Node().resolve_type(obj, info)
-        return base64('%s:%s' % (type, obj.id))
+    def _resolve_node_id(self, obj, args, info):
+        return self.node_id_for(obj, info)
+
+    def node_id_for(self, obj, info=None):
+        object_type = self.Node.T.resolve_type(obj, info)
+        return base64('%s:%s' % (object_type, obj.id))
 
     def connection_definitions(self, name, object_type):
         R = self.R
