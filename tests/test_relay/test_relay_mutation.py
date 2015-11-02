@@ -2,12 +2,14 @@ import operator
 from functools import reduce
 from graphql.core import graphql
 from epoxy import TypeRegistry
+from epoxy.contrib.relay import RelayMixin
 
 
 def test_simple_mutation():
     R = TypeRegistry()
+    Relay = R.Mixin(RelayMixin, None)
 
-    class SimpleAddition(R.Mutation):
+    class SimpleAddition(Relay.Mutation):
         class Input:
             a = R.Int
             b = R.Int
@@ -18,7 +20,7 @@ def test_simple_mutation():
         def execute(self, obj, input, info):
             return self.Output(sum=input.a + input.b)
 
-    class SimpleMultiplication(R.Mutation):
+    class SimpleMultiplication(Relay.Mutation):
         class Input:
             a = R.Int.List
 
@@ -40,10 +42,12 @@ def test_simple_mutation():
 
     mutation_query = '''
     mutation testSimpleAdd {
-        simpleAddition(input: {a: 5, b: 10}) {
+        simpleAddition(input: {a: 5, b: 10, clientMutationId: "test123"}) {
+            clientMutationId
             sum
         }
-        simpleMultiplication(input: {a: [1, 2, 3, 4, 5]}) {
+        simpleMultiplication(input: {a: [1, 2, 3, 4, 5], clientMutationId: "0xdeadbeef"}) {
+            clientMutationId
             product
             input
         }
@@ -54,9 +58,11 @@ def test_simple_mutation():
     assert not result.errors
     assert result.data == {
         'simpleAddition': {
-            'sum': 15
+            'sum': 15,
+            'clientMutationId': 'test123'
         },
         'simpleMultiplication': {
+            'clientMutationId': '0xdeadbeef',
             'product': 120,
             'input': [1, 2, 3, 4, 5]
         }

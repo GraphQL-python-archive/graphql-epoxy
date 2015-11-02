@@ -20,6 +20,7 @@ import six
 
 from .bases.class_type_creator import ClassTypeCreator
 from .bases.input_type import InputTypeBase
+from .bases.mutation import MutationBase
 from .bases.object_type import ObjectTypeBase
 from .field import Field, InputField
 from .metaclasses.input_type import InputTypeMeta
@@ -216,7 +217,7 @@ class TypeRegistry(object):
     def _create_mutation_type_class(self):
         registry = self
 
-        class RegistryInputTypeMeta(MutationMeta):
+        class RegistryMutationMeta(MutationMeta):
             @staticmethod
             def _register(mutation_name, mutation):
                 registry._register_mutation(mutation_name, mutation)
@@ -225,11 +226,11 @@ class TypeRegistry(object):
             def _get_registry():
                 return registry
 
-        @six.add_metaclass(RegistryInputTypeMeta)
-        class InputType(InputTypeBase):
+        @six.add_metaclass(RegistryMutationMeta)
+        class Mutation(MutationBase):
             abstract = True
 
-        return InputType
+        return Mutation
 
     def _register_mutation(self, mutation_name, mutation):
         assert mutation_name not in self._mutations, \

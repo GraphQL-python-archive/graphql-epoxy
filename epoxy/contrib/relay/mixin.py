@@ -1,6 +1,9 @@
 from graphql.core.type import GraphQLArgument
 from graphql.core.type.definition import GraphQLObjectType
+import six
+from ...bases.mutation import MutationBase
 from .connections import connection_args
+from .metaclasses.mutation import RelayMutationMeta
 from .utils import base64, unbase64
 
 
@@ -10,6 +13,7 @@ class RelayMixin(object):
         self.data_source = data_source
         self._node_field = None
         self._connections = {}
+        self.Mutation = self._create_mutation_type_class()
 
     @property
     def NodeField(self):
@@ -83,3 +87,21 @@ class RelayMixin(object):
 
         field = self.R.Field(self.connection_definitions(name, object_type)[0], args=args, resolver=resolver, **kwargs)
         return field
+
+    def _create_mutation_type_class(self):
+        registry = self.R
+
+        class RelayRegistryMutationMeta(RelayMutationMeta):
+            @staticmethod
+            def _register(mutation_name, mutation):
+                registry._register_mutation(mutation_name, mutation)
+
+            @staticmethod
+            def _get_registry():
+                return registry
+
+        @six.add_metaclass(RelayRegistryMutationMeta)
+        class Mutation(MutationBase):
+            abstract = True
+
+        return Mutation

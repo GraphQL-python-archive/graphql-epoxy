@@ -1,3 +1,4 @@
+import functools
 from graphql.core.type import GraphQLField, GraphQLNonNull
 from graphql.core.type.definition import GraphQLArgument
 
@@ -17,8 +18,11 @@ class MutationMeta(type):
         assert output and not hasattr(output, 'T'), 'A mutation must define a class named "Output" inside of it that ' \
                                                     'does not subclass an R.ObjectType'
 
-        Input = type(name + 'Input', (registry.InputType,), dict(vars(input)))
-        Output = type(name + 'Payload', (registry.ObjectType,), dict(vars(output)))
+        input_attrs = mcs._process_input_attrs(registry, dict(vars(input)))
+        output_attrs = mcs._process_output_attrs(registry, dict(vars(output)))
+
+        Input = type(name + 'Input', (registry.InputType,), input_attrs)
+        Output = type(name + 'Payload', (registry.ObjectType,), output_attrs)
         attrs['Input'] = Input
         attrs['Output'] = Output
 
@@ -36,7 +40,7 @@ class MutationMeta(type):
             args={
                 'input': GraphQLArgument(GraphQLNonNull(R[Input]))
             },
-            resolver=lambda obj, args, info: resolver(obj, Input(args.get('input')), info)
+            resolver=functools.partial(mcs._process_resolver, resolver, Input)
         )))
 
     @staticmethod
@@ -46,3 +50,15 @@ class MutationMeta(type):
     @staticmethod
     def _get_registry():
         raise NotImplementedError('_get_registry must be implemented in the sub-metaclass')
+
+    @staticmethod
+    def _process_input_attrs(registry, input_attrs):
+        return input_attrs
+
+    @staticmethod
+    def _process_output_attrs(registry, output_attrs):
+        return output_attrs
+
+    @staticmethod
+    def _process_resolver(resolver, input_class, obj, args, info):
+        return resolver(obj, input_class(args.get('input')), info)
