@@ -11,7 +11,7 @@ if sys.version_info <= (3, 4, 0):
 
 setup(
     name='graphql-epoxy',
-    version='0.2a3',
+    version='0.2',
     description='GraphQL implementation for Python',
     url='https://github.com/graphql-python/graphql-core',
     download_url='https://github.com/graphql-python/graphql-core/releases',
@@ -19,7 +19,7 @@ setup(
     author_email='me' '@' 'jh.gg',
     license='MIT',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Libraries',
         'Programming Language :: Python :: 2',

@@ -12,19 +12,24 @@ def test_input_type_creation():
         b = R.Int
         some_underscore = R.String
         some_from_field = R.InputField(R.String, default_value='Hello World')
+        default_value_from_thunk = R.String(default_value='Hello World')
 
     input_type = SimpleInput.T
     assert input_type is R.SimpleInput()
     assert isinstance(input_type, GraphQLInputObjectType)
     fields = input_type.get_fields()
-    assert list(fields.keys()) == ['a', 'b', 'someUnderscore', 'someFromField']
-    assert [field.name for field in fields.values()] == ['a', 'b', 'someUnderscore', 'someFromField']
 
+    expected_keys = ['a', 'b', 'someUnderscore', 'someFromField', 'defaultValueFromThunk']
+
+    assert list(fields.keys()) == expected_keys
+    assert [field.name for field in fields.values()] == expected_keys
     assert fields['a'].type == GraphQLInt
     assert fields['b'].type == GraphQLInt
     assert fields['someUnderscore'].type == GraphQLString
     assert fields['someFromField'].type == GraphQLString
     assert fields['someFromField'].default_value == 'Hello World'
+    assert fields['defaultValueFromThunk'].type == GraphQLString
+    assert fields['defaultValueFromThunk'].default_value == 'Hello World'
 
     input_value = SimpleInput({
         'a': 1,
@@ -35,6 +40,7 @@ def test_input_type_creation():
     assert input_value.b is None
     assert input_value.some_underscore == 'hello'
     assert input_value.some_from_field == 'Hello World'
+    assert input_value.default_value_from_thunk == 'Hello World'
 
 
 def test_input_type():

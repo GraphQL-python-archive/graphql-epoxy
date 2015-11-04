@@ -7,16 +7,12 @@ Epoxy is a magical tool for rapid development of GraphQL types, schemas, resolve
 * **Quick**: Once you create your schema, epoxy doesn't get in the way. Your resolvers will be called directly by 
 `graphql-core` with no additional indirection.
 
-This codebase is currently a **WORK IN PROGRESS**, and is currently at alpha stages. The API may change without notice. 
-If you're looking for a more stable pythonic `graphql-core` wrapper, check out 
-[`graphene`](https://github.com/graphql-python/graphene).
-
 ## Installation
 
 Epoxy is available on pypi under the package name `graphql-epoxy`, you can get it by running:
 
 ```sh
-pip install graphql-epoxy==0.1a0
+pip install graphql-epoxy
 ```
 
 ## Usage
@@ -164,6 +160,99 @@ class RealHumanBean(models.Model):
 R.Human.CanBe(Human)
 ```
 
+
+## Mutations
+
+Epoxy also supports defining mutations. Making a Mutation a Relay mutation is as simple as changing `R.Mutation` to
+`Relay.Mutation`.
+
+
+```python
+
+class AddFriend(R.Mutation):
+    class Input:
+        human_to_add = R.ID.NonNull
+
+    class Output:
+        new_friends_list = R.Human.List
+
+    @R.resolve_with_args
+    def resolve(self, obj, human_to_add):
+        obj.add_friend(human_to_add)
+        return self.Output(new_friends_list=obj.friends)
+
+
+schema = R.schema(R.Query, R.Mutations)
+
+```
+
+You can then execute the query:
+
+
+```graphql
+mutation AddFriend {
+    addFriend(input: {humanToAdd: 6}) {
+        newFriendsList {
+            id
+            name
+            homePlanet
+        }
+    }
+}
+```
+
+## Defining custom scalar types:
+
+
+```python
+class DateTime(R.Scalar):
+    @staticmethod
+    def serialize(dt):
+        return dt.isoformat()
+
+    @staticmethod
+    def parse_literal(node):
+        if isinstance(node, ast.StringValue):
+            return datetime.datetime.strptime(node.value, "%Y-%m-%dT%H:%M:%S.%f")
+
+    @staticmethod
+    def parse_value(value):
+        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
+
+```
+
+## Defining input types:
+
+```python
+class SimpleInput(R.InputType):
+    a = R.Int
+    b = R.Int
+    some_underscore = R.String
+    some_from_field = R.String(default_value='Hello World')
+
+```
+
+## Defining an Enum (using `enum` module)
+
+```python
+
+from enum import Enum
+
+@R
+class MyEnum(Enum):
+    FOO = 1
+    BAR = 2
+    BAZ = 3
+
+```
+
+### Starwars?!
+Use the force, check out how we've defined the
+[schema](https://github.com/graphql-python/graphql-epoxy/blob/master/tests/test_starwars/schema.py)
+for the starwars tests, and compare them to the reference implementation's
+[schema](https://github.com/graphql/graphql-js/blob/master/src/__tests__/starWarsSchema.js).
+
+
 ## Relay Support
 
 At this point, Epoxy has rudimentary `relay` support. Enable support for `Relay` by mixing in the `RelayMixin` using
@@ -264,50 +353,3 @@ result = graphql(Schema, '''
 }
 ''')
 ```
-
-
-## Mutations
-
-Epoxy also supports defining mutations. Making a Mutation a Relay mutation is as simple as changing `R.Mutation` to 
-`Relay.Mutation`.
-
-
-```python
-
-class AddFriend(R.Mutation):
-    class Input:
-        human_to_add = R.ID.NonNull
-        
-    class Output:
-        new_friends_list = R.Human.List
-        
-    @R.resolve_with_args
-    def resolve(self, obj, human_to_add):
-        obj.add_friend(human_to_add)
-        return self.Output(new_friends_list=obj.friends)
-
-        
-schema = R.schema(R.Query, R.Mutations)
-
-```
-
-You can then execute the query:
-
-
-```graphql
-mutation AddFriend {
-    addFriend(input: {humanToAdd: 6}) {
-        newFriendsList {
-            id
-            name
-            homePlanet
-        }
-    }
-}
-```
-
-
-
-
-
-
