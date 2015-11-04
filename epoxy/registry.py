@@ -58,13 +58,13 @@ class TypeRegistry(object):
     InputField = InputField
 
     def __init__(self):
-        self._registered_types = {}
+        self._registered_types = OrderedDict()
         self._added_impl_types = set()
         self._interface_declared_fields = {}
         self._registered_types_can_be = defaultdict(set)
         self._pending_types_can_be = defaultdict(set)
         self._proxy = ResolvedRegistryProxy(self)
-        self._mutations = {}
+        self._mutations = OrderedDict()
         self.ObjectType = self._create_object_type_class()
         self.InputType = self._create_input_type_class()
         self.Implements = ClassTypeCreator(self, self._create_object_type_class)

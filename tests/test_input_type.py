@@ -46,7 +46,7 @@ def test_input_type():
 
     class Query(R.ObjectType):
         f = R.String(args={
-            'input': GraphQLArgument(R.SimpleInput())
+            'input': R.SimpleInput
         })
 
         def resolve_f(self, obj, args, info):

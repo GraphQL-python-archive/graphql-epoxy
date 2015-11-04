@@ -22,6 +22,7 @@ class Character(R.Interface):
         from .data import get_friends
         return get_friends(obj)
 
+
 class Human(R.Implements.Character):
     home_planet = R.String
 
@@ -32,16 +33,16 @@ class Droid(R.Implements.Character):
 
 class Query(R.ObjectType):
     # Args API will change.
-    hero = R.Field(R.Character, args={
-        'episode': GraphQLArgument(R.Episode())
+    hero = R.Character(args={
+        'episode': R.Episode
     })
 
-    human = R.Field(R.Human, args={
-        'id': GraphQLArgument(R.String())
+    human = R.Human(args={
+        'id': R.String
     })
 
-    droid = R.Field(R.Droid, args={
-        'id': GraphQLArgument(R.String())
+    droid = R.Droid(args={
+        'id': R.String
     })
 
     def resolve_hero(self, obj, args, info):

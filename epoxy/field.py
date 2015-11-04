@@ -1,5 +1,11 @@
+from collections import OrderedDict
+
 from graphql.core.type import GraphQLField, GraphQLInputObjectField
+
+from .argument import Argument
+from .thunk import TypeThunk
 from .utils.gen_id import gen_id
+from .utils.to_camel_case import to_camel_case
 
 
 class Field(object):
@@ -14,7 +20,31 @@ class Field(object):
         self._counter = _counter or gen_id()
 
     def to_field(self, registry, resolver):
-        return GraphQLField(registry[self.type](), args=self.args, resolver=resolver)
+        return GraphQLField(registry[self.type](), args=self.get_arguments(registry), resolver=resolver)
+
+    def get_arguments(self, registry):
+        if not self.args:
+            return None
+
+        arguments = []
+
+        for k, argument in self.args.items():
+            if isinstance(argument, TypeThunk):
+                argument = Argument(argument, _counter=argument._counter, **(argument._kwargs or {}))
+
+            elif not isinstance(argument, Argument):
+                raise ValueError('Unknown argument value type %r' % argument)
+
+            arguments.append((
+                to_camel_case(k), argument
+            ))
+
+        if not isinstance(self.args, OrderedDict):
+            arguments.sort(
+                key=lambda i: i[1]._counter
+            )
+
+        return OrderedDict([(k, v.to_argument(registry)) for k, v in arguments])
 
 
 class InputField(object):

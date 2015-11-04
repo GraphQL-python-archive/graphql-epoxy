@@ -1,4 +1,3 @@
-from graphql.core.type import GraphQLArgument
 from graphql.core.type.definition import GraphQLObjectType
 import six
 from ...bases.mutation import MutationBase
@@ -21,10 +20,7 @@ class RelayMixin(object):
             self.R.Node,
             description='Fetches an object given its ID',
             args={
-                'id': GraphQLArgument(
-                    self.R.ID.NonNull(),
-                    description='The ID of an object'
-                )
+                'id': self.R.ID.NonNull(description='The ID of an object')
             },
             resolver=lambda obj, args, info: self.fetch_node(args.get('id'), info)
         )

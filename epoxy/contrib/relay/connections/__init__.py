@@ -1,10 +1,12 @@
-from graphql.core.type import GraphQLArgument, GraphQLInt, GraphQLString
+from graphql.core.type import GraphQLInt, GraphQLString
+
+from ....argument import Argument
 
 __author__ = 'jake'
 
 connection_args = {
-    'before': GraphQLArgument(GraphQLString),
-    'after': GraphQLArgument(GraphQLString),
-    'first': GraphQLArgument(GraphQLInt),
-    'last': GraphQLArgument(GraphQLInt),
+    'before': Argument(GraphQLString),
+    'after': Argument(GraphQLString),
+    'first': Argument(GraphQLInt),
+    'last': Argument(GraphQLInt),
 }
