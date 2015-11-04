@@ -1,5 +1,5 @@
-from ..field import Field
-from ..thunk import TypeThunk
+from ..types.field import Field
+from .thunk import TypeThunk
 
 
 def yank_potential_fields(attrs, field_class=Field):

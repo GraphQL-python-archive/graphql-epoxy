@@ -1,6 +1,6 @@
 from graphql.core.type import GraphQLInt, GraphQLString
 
-from ....argument import Argument
+from ....types.argument import Argument
 
 __author__ = 'jake'
 

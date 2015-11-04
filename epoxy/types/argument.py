@@ -1,5 +1,5 @@
 from graphql.core.type import GraphQLArgument
-from .utils.gen_id import gen_id
+from ..utils.gen_id import gen_id
 
 
 class Argument(object):

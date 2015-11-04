@@ -1,4 +1,4 @@
-from ..thunk import ResolveThunk, ThunkList
+from ..utils.thunk import ResolveThunk, ThunkList
 
 
 class ClassTypeCreator(object):

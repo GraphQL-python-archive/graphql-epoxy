@@ -1,7 +1,7 @@
 import copy
 from graphql.core.type.definition import GraphQLList, GraphQLNonNull
-from .utils.gen_id import gen_id
-from .utils.maybe_callable import maybe_callable
+from .gen_id import gen_id
+from .maybe_callable import maybe_callable
 
 
 def clone_with_kwargs(thunk, kwargs):

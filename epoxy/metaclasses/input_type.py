@@ -1,7 +1,9 @@
 from collections import OrderedDict
 from functools import partial
+
 from graphql.core.type.definition import GraphQLInputObjectType
-from ..field import InputField
+
+from ..types.field import InputField
 from ..utils.get_declared_fields import get_declared_fields
 from ..utils.weak_ref_holder import WeakRefHolder
 from ..utils.yank_potential_fields import yank_potential_fields

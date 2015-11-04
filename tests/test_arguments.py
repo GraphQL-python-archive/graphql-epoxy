@@ -1,7 +1,9 @@
 from collections import OrderedDict
+
 from graphql.core.type import GraphQLString, GraphQLInt, GraphQLID, GraphQLNonNull
-from epoxy.argument import Argument
+
 from epoxy.registry import TypeRegistry
+from epoxy.types.argument import Argument
 
 make_args = lambda R: {
     'a': R.Int,

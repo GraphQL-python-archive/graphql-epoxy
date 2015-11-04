@@ -2,10 +2,10 @@ from collections import OrderedDict
 
 from graphql.core.type import GraphQLField, GraphQLInputObjectField
 
-from .argument import Argument
-from .thunk import TypeThunk
-from .utils.gen_id import gen_id
-from .utils.to_camel_case import to_camel_case
+from ..types.argument import Argument
+from ..utils.gen_id import gen_id
+from ..utils.thunk import TypeThunk
+from ..utils.to_camel_case import to_camel_case
 
 
 class Field(object):

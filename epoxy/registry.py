@@ -23,17 +23,18 @@ from .bases.input_type import InputTypeBase
 from .bases.mutation import MutationBase
 from .bases.object_type import ObjectTypeBase
 from .bases.scalar import ScalarBase
-from .field import Field, InputField
 from .metaclasses.input_type import InputTypeMeta
 from .metaclasses.interface import InterfaceMeta
 from .metaclasses.mutation import MutationMeta
 from .metaclasses.object_type import ObjectTypeMeta
 from .metaclasses.scalar import ScalarMeta
 from .metaclasses.union import UnionMeta
-from .thunk import AttributeTypeThunk, RootTypeThunk, ThunkList, TransformThunkList
+from .types.argument import Argument
+from .types.field import Field, InputField
 from .utils.enum_to_graphql_enum import enum_to_graphql_enum
 from .utils.maybe_t import maybe_t
 from .utils.method_dispatch import method_dispatch
+from .utils.thunk import AttributeTypeThunk, RootTypeThunk, ThunkList, TransformThunkList
 
 builtin_scalars = [
     GraphQLBoolean,
@@ -49,15 +50,16 @@ class TypeRegistry(object):
         # Types
         'ObjectType', 'InputType', 'Union' 'Interface', 'Implements', 'Scalar'
         # Functions
-        'Schema', 'Register', 'Mixin',
+                                                                      'Schema', 'Register', 'Mixin',
         # Mutations
         'Mutation', 'Mutations',
         # Fields
-        'Field', 'InputField',
+        'Field', 'InputField', 'Argument'
     ])
 
     Field = Field
     InputField = InputField
+    Argument = Argument
 
     def __init__(self):
         self._registered_types = OrderedDict()

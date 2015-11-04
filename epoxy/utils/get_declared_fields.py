@@ -1,10 +1,11 @@
 import copy
-from ..field import Field
-from ..thunk import TypeThunk
-from ..utils.first_of import first_of
-from ..utils.maybe_callable import maybe_callable
-from ..utils.maybe_t import maybe_t
-from ..utils.to_camel_case import to_camel_case
+
+from ..types import Field
+from .first_of import first_of
+from .maybe_callable import maybe_callable
+from .maybe_t import maybe_t
+from .thunk import TypeThunk
+from .to_camel_case import to_camel_case
 
 
 def get_declared_fields(type_name, attrs, field_class=Field):
