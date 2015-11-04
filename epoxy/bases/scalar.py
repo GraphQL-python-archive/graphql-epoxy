@@ -1,0 +1,2 @@
+class ScalarBase(object):
+    pass

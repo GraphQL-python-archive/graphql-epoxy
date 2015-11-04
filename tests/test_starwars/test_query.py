@@ -1,6 +1,5 @@
 from .schema import StarWarsSchema
 from graphql.core import graphql
-from graphql.core.error import format_error
 
 
 def test_hero_name_query():

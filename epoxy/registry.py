@@ -22,11 +22,13 @@ from .bases.class_type_creator import ClassTypeCreator
 from .bases.input_type import InputTypeBase
 from .bases.mutation import MutationBase
 from .bases.object_type import ObjectTypeBase
+from .bases.scalar import ScalarBase
 from .field import Field, InputField
 from .metaclasses.input_type import InputTypeMeta
 from .metaclasses.interface import InterfaceMeta
 from .metaclasses.mutation import MutationMeta
 from .metaclasses.object_type import ObjectTypeMeta
+from .metaclasses.scalar import ScalarMeta
 from .metaclasses.union import UnionMeta
 from .thunk import AttributeTypeThunk, RootTypeThunk, ThunkList, TransformThunkList
 from .utils.enum_to_graphql_enum import enum_to_graphql_enum
@@ -45,7 +47,7 @@ builtin_scalars = [
 class TypeRegistry(object):
     _reserved_names = frozenset([
         # Types
-        'ObjectType', 'InputType', 'Union' 'Interface', 'Implements',
+        'ObjectType', 'InputType', 'Union' 'Interface', 'Implements', 'Scalar'
         # Functions
         'Schema', 'Register', 'Mixin',
         # Mutations
@@ -71,6 +73,7 @@ class TypeRegistry(object):
         self.Union = ClassTypeCreator(self, self._create_union_type_class)
         self.Interface = self._create_interface_type_class()
         self.Mutation = self._create_mutation_type_class()
+        self.Scalar = self._create_scalar_type_class()
 
         for type in builtin_scalars:
             self.Register(type)
@@ -213,6 +216,24 @@ class TypeRegistry(object):
             abstract = True
 
         return InputType
+
+    def _create_scalar_type_class(self):
+        registry = self
+
+        class RegistryScalarMeta(ScalarMeta):
+            @staticmethod
+            def _register(scalar):
+                registry.Register(scalar)
+
+            @staticmethod
+            def _get_registry():
+                return registry
+
+        @six.add_metaclass(RegistryScalarMeta)
+        class Scalar(ScalarBase):
+            abstract = True
+
+        return Scalar
 
     def _create_mutation_type_class(self):
         registry = self
