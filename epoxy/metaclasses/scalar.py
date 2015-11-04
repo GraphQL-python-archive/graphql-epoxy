@@ -24,7 +24,7 @@ class ScalarMeta(type):
         ))
 
     @staticmethod
-    def _register(mutation):
+    def _register(scalar):
         raise NotImplementedError('_register must be implemented in the sub-metaclass')
 
     @staticmethod
