@@ -14,14 +14,15 @@ class ScalarMeta(type):
         serialize = getattr(instance, 'serialize')
         parse_literal = getattr(instance, 'parse_literal')
         parse_value = getattr(instance, 'parse_value')
-
-        mcs._register(GraphQLScalarType(
+        scalar = GraphQLScalarType(
             name=name,
             description=attrs.get('__doc__', None),
             serialize=serialize,
             parse_value=parse_value,
             parse_literal=parse_literal
-        ))
+        )
+        cls.T = scalar
+        mcs._register(scalar)
 
     @staticmethod
     def _register(scalar):
