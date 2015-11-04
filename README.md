@@ -164,10 +164,7 @@ class RealHumanBean(models.Model):
 R.Human.CanBe(Human)
 ```
 
-## Relay Support (WIP)
- - [x] Node
- - [x] Connection & Edges
- - [ ] Mutations
+## Relay Support
 
 At this point, Epoxy has rudimentary `relay` support. Enable support for `Relay` by mixing in the `RelayMixin` using
 `TypeResolver.Mixin`. 
@@ -203,6 +200,21 @@ to a list of pets & a node field to resolve an indivudal node.
 class Query(R.ObjectType):
     pets = Relay.Connection('Pet', R.Pet) # The duplicate 'Pet' definition is just temporary and will be removed.
     node = Relay.NodeField
+
+```
+
+### Mutations
+```python
+class SimpleAddition(Relay.Mutation):
+    class Input:
+        a = R.Int
+        b = R.Int
+
+    class Output:
+        sum = R.Int
+
+    def execute(self, obj, input, info):
+        return self.Output(sum=input.a + input.b)
 
 ```
 
@@ -254,7 +266,7 @@ result = graphql(Schema, '''
 ```
 
 
-## Mutations (Coming Soon)
+## Mutations
 
 Epoxy also supports defining mutations. Making a Mutation a Relay mutation is as simple as changing `R.Mutation` to 
 `Relay.Mutation`.
