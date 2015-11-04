@@ -50,7 +50,7 @@ class TypeRegistry(object):
         # Types
         'ObjectType', 'InputType', 'Union' 'Interface', 'Implements', 'Scalar'
         # Functions
-                                                                      'Schema', 'Register', 'Mixin',
+        'Schema', 'Register', 'Mixin',
         # Mutations
         'Mutation', 'Mutations',
         # Fields
