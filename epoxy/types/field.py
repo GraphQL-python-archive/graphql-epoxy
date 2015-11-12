@@ -1,11 +1,10 @@
 from collections import OrderedDict
-
 from graphql.core.type import GraphQLField, GraphQLInputObjectField
-
 from ..types.argument import Argument
 from ..utils.gen_id import gen_id
 from ..utils.thunk import TypeThunk
 from ..utils.to_camel_case import to_camel_case
+from ..utils.wrap_resolver_translating_arguments import wrap_resolver_translating_arguments
 
 
 class Field(object):
@@ -20,13 +19,19 @@ class Field(object):
         self._counter = _counter or gen_id()
 
     def to_field(self, registry, resolver):
-        return GraphQLField(registry[self.type](), args=self.get_arguments(registry), resolver=resolver)
+        args, arguments_to_original_case = self.get_arguments(registry)
+
+        if arguments_to_original_case:
+            resolver = wrap_resolver_translating_arguments(resolver, arguments_to_original_case)
+
+        return GraphQLField(registry[self.type](), args=args, resolver=resolver)
 
     def get_arguments(self, registry):
         if not self.args:
-            return None
+            return None, None
 
         arguments = []
+        arguments_to_original_case = {}
 
         for k, argument in self.args.items():
             if isinstance(argument, TypeThunk):
@@ -35,8 +40,16 @@ class Field(object):
             elif not isinstance(argument, Argument):
                 raise ValueError('Unknown argument value type %r' % argument)
 
+            camel_cased_name = to_camel_case(k)
+            if camel_cased_name in arguments_to_original_case:
+                raise ValueError(
+                    'Argument %s already exists as %s' %
+                    (k, arguments_to_original_case[camel_cased_name])
+                )
+
+            arguments_to_original_case[camel_cased_name] = k
             arguments.append((
-                to_camel_case(k), argument
+                camel_cased_name, argument
             ))
 
         if not isinstance(self.args, OrderedDict):
@@ -44,7 +57,12 @@ class Field(object):
                 key=lambda i: i[1]._counter
             )
 
-        return OrderedDict([(k, v.to_argument(registry)) for k, v in arguments])
+        # Remove things that wouldn't perform any meaningful translation.
+        for k, v in list(arguments_to_original_case.items()):
+            if k == v:
+                del arguments_to_original_case[k]
+
+        return OrderedDict([(k, v.to_argument(registry)) for k, v in arguments]), arguments_to_original_case
 
 
 class InputField(object):

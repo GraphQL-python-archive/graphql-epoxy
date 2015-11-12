@@ -40,7 +40,7 @@ class Query(R.ObjectType):
     
     def resolve_human(self, obj, args, info):
         """This will be used as the description of the field Query.human."""
-        return Human(5, 'Bob', [Human(6, 'Bill')]
+        return Human(id=5, name='Bob', friends=[Human(id=6, name='Bill')]
 
 ```
 

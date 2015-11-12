@@ -1,7 +1,7 @@
 from collections import OrderedDict
-
+from pytest import raises
+from graphql.core import graphql
 from graphql.core.type import GraphQLString, GraphQLInt, GraphQLID, GraphQLNonNull
-
 from epoxy.registry import TypeRegistry
 from epoxy.types.argument import Argument
 
@@ -88,3 +88,50 @@ def test_args_can_also_use_ordered_dict():
     query_type = R.Query()
     check_args(TestInputType.T, query_type.get_fields()['int'].args)
     check_args(TestInputType.T, query_type.get_fields()['intFromField'].args)
+
+
+def test_resolved_args_will_be_translated_to_original_casing():
+    R = TypeRegistry()
+
+    class Query(R.ObjectType):
+        argument_keys = R.String.List(args={
+            'foo': R.String,
+            'foo_bar': R.String
+        })
+
+        def resolve_argument_keys(self, obj, args, info):
+            return list(sorted(args.keys()))
+
+    Schema = R.Schema(R.Query)
+    result = graphql(Schema, '''
+    {
+        argumentKeys(foo: "Hello", fooBar: "World")
+    }
+    ''')
+
+    assert not result.errors
+
+    assert result.data == {
+        'argumentKeys': ['foo', 'foo_bar']
+    }
+
+
+def test_will_recognize_casing_conversion_conflicts():
+    R = TypeRegistry()
+
+    class Query(R.ObjectType):
+        argument_keys = R.String.List(args={
+            'foo_bar': R.String,
+            'fooBar': R.String
+        })
+
+        def resolve_argument_keys(self, obj, args, info):
+            return list(sorted(args.keys()))
+
+    with raises(ValueError) as excinfo:
+        Schema = R.Schema(R.Query)
+
+    assert str(excinfo.value) in (
+        'Argument foo_bar already exists as fooBar',
+        'Argument fooBar already exists as foo_bar',
+    )
