@@ -313,11 +313,12 @@ class TypeRegistry(object):
 
                 interface._impls.append(type)
 
-    def Schema(self, query, mutation=None):
+    def Schema(self, query, mutation=None, subscription=None):
         query = self[query]()
         mutation = self[mutation]()
+        subscription = self[subscription]()
         self._add_impl_to_interfaces()
-        return GraphQLSchema(query=query, mutation=mutation)
+        return GraphQLSchema(query=query, mutation=mutation, subscription=subscription)
 
     def Mixin(self, mixin_cls, *args, **kwargs):
         mixin = mixin_cls(self, *args, **kwargs)

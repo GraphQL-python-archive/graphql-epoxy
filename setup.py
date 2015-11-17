@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys
 
-required_packages = ['graphql-core>=0.4.7b1']
+required_packages = ['graphql-core>=0.4.9']
 
 if sys.version_info <= (2, 7, 0):
     required_packages.append('enum34>=1.0.4')
@@ -11,7 +11,7 @@ if sys.version_info <= (3, 4, 0):
 
 setup(
     name='graphql-epoxy',
-    version='0.2.1',
+    version='0.3.0',
     description='GraphQL implementation for Python',
     url='https://github.com/graphql-python/graphql-core',
     download_url='https://github.com/graphql-python/graphql-core/releases',
