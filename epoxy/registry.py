@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 from enum import Enum
 from functools import partial
+from operator import itemgetter
 from graphql.core.type import (
     GraphQLBoolean,
     GraphQLEnumType,
@@ -17,7 +18,6 @@ from graphql.core.type import (
 )
 from graphql.core.type.definition import GraphQLType, get_named_type
 import six
-
 from .bases.class_type_creator import ClassTypeCreator
 from .bases.input_type import InputTypeBase
 from .bases.mutation import MutationBase
@@ -34,7 +34,7 @@ from .types.field import Field, InputField
 from .utils.enum_to_graphql_enum import enum_to_graphql_enum
 from .utils.maybe_t import maybe_t
 from .utils.method_dispatch import method_dispatch
-from .utils.thunk import AttributeTypeThunk, RootTypeThunk, ThunkList, TransformThunkList
+from .utils.thunk import AttributeTypeThunk, IdentityTypeThunk, RootTypeThunk, ThunkList, TransformThunkList
 
 builtin_scalars = [
     GraphQLBoolean,
@@ -113,12 +113,22 @@ class TypeRegistry(object):
         if not isinstance(item, str):
             item = maybe_t(item)
             assert isinstance(item, GraphQLType), \
-                'Attempted to resolve an item {} that is not a GraphQLType'.format(item)
+                'Attempted to resolve an item "{}" that is not a GraphQLType'.format(item)
+
+            named_type = get_named_type(item)
+            known_type = self._registered_types.get(named_type.name)
+            # Happens when we attempt to resolve an un-registered type.
+            assert known_type and known_type not in self._reserved_names, \
+                'Attempted to resolve a type "{}" that is not registered with this Registry.'.format(item)
+
+            # Happens when we attempt to resolve a type that is already registered, but isn't the same type.
+            assert known_type is named_type, \
+                'Attempted to resolve a type "{}" that does not match the already registered type.'.format(item)
 
             return item
 
         value = self._registered_types.get(item)
-        assert value, "Type {} was requested, but was not registered.".format(item)
+        assert value, 'Type "{}" was requested, but was not registered.'.format(item)
         return value
 
     def __getattr__(self, item):
@@ -266,14 +276,16 @@ class TypeRegistry(object):
         if not self._mutations:
             raise TypeError("No mutations have been registered.")
 
-        mutations = OrderedDict()
-        for k in sorted(self._mutations.keys()):
-            mutations[k] = self._mutations[k]()
+        existing_mutation_type = self._registered_types.get('Mutations')
+        if existing_mutation_type:
+            return IdentityTypeThunk(existing_mutation_type)
 
-        return GraphQLObjectType(
+        mutations = GraphQLObjectType(
             name='Mutations',
-            fields=mutations
+            fields=lambda: OrderedDict([(k, v()) for k, v in sorted(self._mutations.items(), key=itemgetter(0))])
         )
+        self._registered_types[mutations.name] = mutations
+        return IdentityTypeThunk(mutations)
 
     def _create_is_type_of(self, type):
         return partial(self._is_type_of, type)

@@ -1,4 +1,4 @@
-from graphql.core.type.definition import GraphQLObjectType, GraphQLNonNull, GraphQLList
+from graphql.core.type.definition import GraphQLObjectType, GraphQLNonNull, GraphQLList, GraphQLField
 from graphql.core.type.scalars import GraphQLString
 from epoxy.registry import TypeRegistry
 from pytest import raises
@@ -178,3 +178,41 @@ def test_orders_fields_in_order_declared():
 
     field_order = list(Dog.T.get_fields().keys())
     assert field_order == ['id', 'name', 'dog', 'someOtherField', 'someOtherDog', 'foo', 'bar', 'aaa']
+
+
+def test_cannot_resolve_unregistered_type():
+    R = TypeRegistry()
+
+    Dog = GraphQLObjectType(
+        name='Dog',
+        fields={
+            'a': GraphQLField(GraphQLString)
+        }
+    )
+
+    with raises(AssertionError) as excinfo:
+        R[Dog]()
+
+    assert str(excinfo.value) == 'Attempted to resolve a type "Dog" that is not registered with this Registry.'
+
+    R(Dog)
+    assert R[Dog]() is Dog
+
+
+def test_cannot_resolve_type_of_same_name_that_is_mismatched():
+    R = TypeRegistry()
+
+    class Dog(R.ObjectType):
+        a = R.String
+
+    SomeOtherDog = GraphQLObjectType(
+        name='Dog',
+        fields={
+            'a': GraphQLField(GraphQLString)
+        }
+    )
+
+    with raises(AssertionError) as excinfo:
+        R[SomeOtherDog]()
+
+    assert str(excinfo.value) == 'Attempted to resolve a type "Dog" that does not match the already registered type.'

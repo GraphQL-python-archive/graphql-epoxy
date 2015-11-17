@@ -22,6 +22,8 @@ def test_resolves_regular_graphql_type():
         def resolve_built_in_type(self, obj, args, info):
             return BuiltInTypeTuple('Hello World. I am a string.')
 
+    R(BuiltInType)
+
     schema = R.Schema(R.Query)
     result = graphql(schema, '{ builtInType { someString } }')
     assert not result.errors
