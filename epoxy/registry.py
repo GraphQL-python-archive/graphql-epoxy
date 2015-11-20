@@ -48,7 +48,7 @@ builtin_scalars = [
 class TypeRegistry(object):
     _reserved_names = frozenset([
         # Types
-        'ObjectType', 'InputType', 'Union' 'Interface', 'Implements', 'Scalar'
+        'ObjectType', 'InputType', 'Union' 'Interface', 'Implements', 'Scalar',
         # Functions
         'Schema', 'Register', 'Mixin',
         # Mutations
@@ -96,6 +96,9 @@ class TypeRegistry(object):
     @Register.register(GraphQLInputObjectType)
     @Register.register(GraphQLScalarType)
     def register_(self, t):
+        if t.name in self._registered_types and self._registered_types[t.name] is t:
+            return t
+
         assert not t.name.startswith('_'), \
             'Registered type name cannot start with an "_".'
         assert t.name not in self._reserved_names, \
