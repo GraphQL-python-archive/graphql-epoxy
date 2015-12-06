@@ -13,7 +13,7 @@ class InterfaceMeta(type):
             return super(InterfaceMeta, mcs).__new__(mcs, name, bases, attrs)
 
         class_ref = WeakRefHolder()
-        declared_fields = get_declared_fields(name, yank_potential_fields(attrs))
+        declared_fields = get_declared_fields(name, yank_potential_fields(attrs, bases))
         interface = GraphQLInterfaceType(
             name,
             fields=partial(mcs._build_field_map, class_ref, declared_fields),

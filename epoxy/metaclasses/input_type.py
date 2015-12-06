@@ -16,7 +16,7 @@ class InputTypeMeta(type):
 
         name = attrs.pop('_name', name)
         class_ref = WeakRefHolder()
-        declared_fields = get_declared_fields(name, yank_potential_fields(attrs, InputField), InputField)
+        declared_fields = get_declared_fields(name, yank_potential_fields(attrs, bases, InputField), InputField)
         interface = GraphQLInputObjectType(
             name,
             fields=partial(mcs._build_field_map, class_ref, declared_fields),

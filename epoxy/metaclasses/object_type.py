@@ -16,7 +16,8 @@ class ObjectTypeMeta(type):
         name = attrs.pop('_name', name)
         class_ref = WeakRefHolder()
         registry = mcs._get_registry()
-        declared_fields = get_declared_fields(name, yank_potential_fields(attrs))
+
+        declared_fields = get_declared_fields(name, yank_potential_fields(attrs, bases))
 
         with no_implementation_registration():
             object_type = GraphQLObjectType(

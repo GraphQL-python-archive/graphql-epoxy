@@ -13,7 +13,6 @@ def check_dog(R, Dog):
     assert fields['name'].type == GraphQLString
     assert fields['name'].name == 'name'
 
-
 def test_register_single_type():
     R = TypeRegistry()
 
@@ -46,6 +45,18 @@ def test_register_type_can_use_builtin_graphql_types_in_field():
 
     class Dog(R.ObjectType):
         name = R.Field(GraphQLString)
+
+    check_dog(R, Dog)
+
+
+def test_can_use_mixins():
+    R = TypeRegistry()
+
+    class DogMixin():
+        name = R.String
+
+    class Dog(R.ObjectType, DogMixin):
+        pass
 
     check_dog(R, Dog)
 
